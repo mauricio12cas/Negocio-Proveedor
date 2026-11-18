@@ -6,6 +6,7 @@
 
 ## Cómo usar este cuestionario
 
+- **¿Prefieres contestarlo a mano en iPad con Apple Pencil?** Usa `cuestionario-ipad-esencial.pdf` (solo las 93 preguntas críticas) o `cuestionario-ipad-completo.pdf` (todas), en esta misma carpeta.
 - **No tienes que contestar todo de una vez.** Empieza por las preguntas 🔴. Con esas ya se puede definir la primera versión (MVP).
 - Responde debajo de cada pregunta, en la línea `R:`. Si no lo sabes, escribe **"No sé"** o **"Recomiéndame"**. Eso también es información útil.
 - Si una sección no aplica a tu negocio, escribe **"No aplica"** en el título de la sección y sigue adelante.
