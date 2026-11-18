@@ -157,8 +157,8 @@ def tabla_marcar(cfg) -> str:
     return f'<table class="t marcar"><thead><tr>{cab}</tr></thead><tbody>{cuerpo}</tbody></table>'
 
 
-def pregunta_html(q) -> str:
-    f = FORMATO.get(q["cod"], {})
+def pregunta_html(q, formato: dict | None = None) -> str:
+    f = formato if formato is not None else FORMATO.get(q["cod"], {})
     clase, etiqueta = PRIORIDAD[q["pri"]]
     texto = f.get("t", q["texto"])
     cuerpo = []

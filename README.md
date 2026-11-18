@@ -9,6 +9,8 @@ Proyecto de proveedor de insumos para restaurantes. Por ahora está en fase de d
 | `docs/cuestionario-ipad-esencial.pdf` | Las 93 preguntas críticas, para contestar a mano en iPad con Apple Pencil. |
 | `docs/cuestionario-ipad-completo.pdf` | Las 355 preguntas, para contestar a mano en iPad con Apple Pencil. |
 | `docs/cuestionario-descubrimiento.md` | El mismo cuestionario en texto, para contestar escribiendo. Es la fuente de los PDF. |
+| `docs/respuestas-ronda-1.md` | Respuestas de la primera ronda transcritas, resumen del negocio y pendientes. |
+| `docs/cuestionario-ipad-seguimiento.pdf` | Ronda 2: aclaraciones, supuestos y preguntas críticas pendientes (55 preguntas). |
 
 ## Regenerar los PDF
 
@@ -16,6 +18,12 @@ Si cambias el cuestionario en Markdown, vuelve a generar los PDF (requiere Pytho
 
 ```bash
 python3 scripts/cuestionario/generar.py
+```
+
+El cuestionario de seguimiento se genera aparte:
+
+```bash
+python3 scripts/cuestionario/seguimiento.py
 ```
 
 El formato de respuesta de cada pregunta (casillas, tablas, renglones) está en `scripts/cuestionario/formato.py`.
