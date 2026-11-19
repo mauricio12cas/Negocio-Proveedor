@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administración</title>
+  <link rel="stylesheet" href="base.css" />
+  <style>
+    /* Acceso */
+    #pantallaAcceso { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+    .acceso { width: 100%; max-width: 380px; background: var(--superficie); border: 1px solid var(--borde); border-radius: 16px; padding: 26px 22px; box-shadow: var(--sombra); }
+    .acceso .negocio { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--tenue); }
+    .acceso h1 { font-size: 22px; margin: 4px 0 18px; }
+    .acceso .btn { width: 100%; padding: 12px; }
+    .acceso-error { color: var(--peligro); font-size: 14px; margin-top: 10px; }
+    .acceso-nota { font-size: 13px; color: var(--tenue); margin-top: 12px; word-break: break-all; }
+
+    /* Estructura */
+    #pantallaPanel { display: none; }
+    .lateral { position: fixed; inset: 0 auto 0 0; width: 220px; background: var(--superficie); border-right: 1px solid var(--borde); display: flex; flex-direction: column; padding: 18px 12px; }
+    .lateral .negocio { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--tenue); padding: 0 8px 14px; }
+    .menu { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .menu button { text-align: left; border: 0; background: transparent; padding: 10px 12px; border-radius: 10px; font-weight: 600; color: var(--tenue); }
+    .menu button:hover { background: var(--superficie-2); color: var(--texto); }
+    .menu button.activo { background: var(--acento); color: var(--acento-texto); }
+    .principal { margin-left: 220px; padding: 28px 32px 60px; max-width: 1200px; }
+    .encabezado { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+    .encabezado h1 { font-size: 24px; }
+    .encabezado p { color: var(--tenue); font-size: 14px; margin-top: 2px; }
+    .vista { display: none; }
+    .vista.activa { display: block; }
+    .filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .filtros .entrada { width: auto; min-width: 150px; }
+
+    @media (max-width: 860px) {
+      .lateral { position: sticky; top: 0; inset: auto; width: auto; height: auto; flex-direction: row; align-items: center; padding: 8px; gap: 8px; z-index: 40; border-right: 0; border-bottom: 1px solid var(--borde); overflow-x: auto; }
+      .lateral .negocio { display: none; }
+      .menu { flex-direction: row; }
+      .menu button { white-space: nowrap; padding: 8px 12px; }
+      .principal { margin-left: 0; padding: 18px 14px 60px; }
+    }
+
+    /* Pedidos */
+    .pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+    .pedido { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px; }
+    .pedido.cancelado { opacity: .55; }
+    .pedido-cab { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .pedido-cliente { font-weight: 700; font-size: 16px; }
+    .pedido-sub { font-size: 13px; color: var(--tenue); }
+    .pedido-suc { font-size: 12px; font-weight: 700; color: var(--tenue); text-transform: uppercase; letter-spacing: .06em; margin-top: 10px; }
+    .linea { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 3px 0; border-bottom: 1px dashed var(--borde); }
+    .linea:last-child { border-bottom: 0; }
+    .linea small { color: var(--tenue); }
+    .pedido-notas { font-size: 13px; background: var(--aviso-suave); color: var(--aviso); border-radius: 8px; padding: 8px 10px; margin-top: 10px; white-space: pre-wrap; }
+    .pedido-pie { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--borde); }
+    .pedido-pie select { width: auto; }
+
+    /* Tablas */
+    .tabla-caja { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; font-size: 12px; color: var(--tenue); font-weight: 700; padding: 10px 12px; background: var(--superficie-2); white-space: nowrap; }
+    td { padding: 10px 12px; border-top: 1px solid var(--borde); vertical-align: top; }
+    td.num { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    td small { color: var(--tenue); }
+    tr.inactivo td { color: var(--tenue); }
+
+    /* Clientes */
+    .clientes { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+    .cliente { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px; }
+    .cliente.inactivo { opacity: .6; }
+    .cliente-cab { display: flex; justify-content: space-between; gap: 8px; }
+    .cliente h3 { font-size: 16px; }
+    .cliente-datos { font-size: 13px; color: var(--tenue); margin: 6px 0 10px; }
+    .link-caja { display: flex; gap: 6px; align-items: center; background: var(--superficie-2); border-radius: 8px; padding: 6px 6px 6px 10px; }
+    .link-caja code { flex: 1; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tenue); }
+    .cliente-acciones { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+
+    .lista-editable .fila { display: flex; gap: 6px; margin-bottom: 6px; }
+    .lista-editable .fila input { flex: 1; }
+    .casillas { border: 1px solid var(--borde); border-radius: 10px; max-height: 300px; overflow-y: auto; padding: 4px 10px 10px; }
+    .casillas .cat { font-size: 12px; font-weight: 700; color: var(--tenue); text-transform: uppercase; letter-spacing: .06em; margin: 10px 0 4px; display: flex; justify-content: space-between; }
+    .casillas .cat button { border: 0; background: none; color: var(--resalte); font-weight: 700; font-size: 12px; }
+    .casillas label { display: flex; gap: 8px; align-items: center; padding: 4px 0; font-size: 14px; }
+    .casillas label small { color: var(--tenue); }
+    .dos-columnas { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    @media (max-width: 560px) { .dos-columnas { grid-template-columns: 1fr; } }
+    .interruptor { display: flex; gap: 8px; align-items: center; font-weight: 600; margin-bottom: 14px; }
+
+    .compras-titulo { display: none; }
+    @media print {
+      .lateral, .encabezado .btn, .filtros { display: none !important; }
+      .principal { margin: 0; padding: 0; }
+      .compras-titulo { display: block; font-size: 18px; margin-bottom: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Acceso -->
+  <div id="pantallaAcceso">
+    <form class="acceso" id="formAcceso">
+      <div class="negocio" id="accesoNegocio">PROVEEDOR</div>
+      <h1>Administración</h1>
+      <label class="campo"><span>Correo</span><input type="email" id="correo" autocomplete="username" required /></label>
+      <label class="campo"><span>Contraseña</span><input type="password" id="contrasena" autocomplete="current-password" required /></label>
+      <button class="btn primario" type="submit" id="btnEntrar">Entrar</button>
+      <div class="acceso-error" id="accesoError"></div>
+      <div class="acceso-nota" id="accesoNota"></div>
+    </form>
+  </div>
+
+  <!-- Panel -->
+  <div id="pantallaPanel">
+    <aside class="lateral">
+      <div class="negocio" id="panelNegocio">PROVEEDOR</div>
+      <nav class="menu" id="menu">
+        <button data-vista="pedidos" class="activo">Pedidos</button>
+        <button data-vista="compras">Por comprar</button>
+        <button data-vista="clientes">Clientes</button>
+        <button data-vista="catalogo">Catálogo</button>
+        <button data-vista="ajustes">Ajustes</button>
+      </nav>
+      <button class="btn chico" id="btnSalir">Cerrar sesión</button>
+    </aside>
+
+    <main class="principal">
+
+      <!-- Pedidos -->
+      <section class="vista activa" id="vista-pedidos">
+        <div class="encabezado">
+          <div><h1>Pedidos</h1><p>Confirma los pedidos y actualiza su estado.</p></div>
+          <button class="btn" id="btnRecargarPedidos">Actualizar</button>
+        </div>
+        <div class="filtros">
+          <select class="entrada" id="filtroPeriodo">
+            <option value="proximos">Próximas entregas</option>
+            <option value="dia">Un día…</option>
+            <option value="todos">Todos (últimos 300)</option>
+          </select>
+          <input type="date" class="entrada" id="filtroDia" hidden />
+          <select class="entrada" id="filtroCliente"><option value="">Todos los clientes</option></select>
+          <select class="entrada" id="filtroEstado">
+            <option value="">Todos los estados</option>
+            <option value="recibido">Recibido</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="en_ruta">En ruta</option>
+            <option value="entregado">Entregado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div id="listaPedidos"></div>
+      </section>
+
+      <!-- Por comprar -->
+      <section class="vista" id="vista-compras">
+        <div class="encabezado">
+          <div><h1>Por comprar</h1><p>Suma de todos los pedidos de un día de entrega (sin cancelados).</p></div>
+          <button class="btn" onclick="window.print()">Imprimir</button>
+        </div>
+        <div class="filtros">
+          <input type="date" class="entrada" id="comprasDia" />
+        </div>
+        <div class="compras-titulo" id="comprasTitulo"></div>
+        <div id="listaCompras"></div>
+      </section>
+
+      <!-- Clientes -->
+      <section class="vista" id="vista-clientes">
+        <div class="encabezado">
+          <div><h1>Clientes</h1><p>Cada cliente pide desde su propio link. No compartas el link de un cliente con otro.</p></div>
+          <button class="btn primario" id="btnNuevoCliente">+ Nuevo cliente</button>
+        </div>
+        <div id="listaClientes"></div>
+      </section>
+
+      <!-- Catálogo -->
+      <section class="vista" id="vista-catalogo">
+        <div class="encabezado">
+          <div><h1>Catálogo</h1><p>Productos que puedes asignar a tus clientes.</p></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="btnImportar">Pegar desde Excel</button>
+            <button class="btn primario" id="btnNuevoProducto">+ Nuevo producto</button>
+          </div>
+        </div>
+        <div class="filtros"><input class="entrada" id="buscarProducto" placeholder="Buscar producto…" /></div>
+        <div id="listaProductos"></div>
+      </section>
+
+      <!-- Ajustes -->
+      <section class="vista" id="vista-ajustes">
+        <div class="encabezado"><div><h1>Ajustes</h1><p>Datos que ven tus clientes y reglas para pedir.</p></div></div>
+        <form id="formAjustes" style="max-width:480px">
+          <label class="campo"><span>Nombre del negocio</span><input id="ajNombre" maxlength="60" required /></label>
+          <label class="campo"><span>WhatsApp para recibir avisos de pedido</span>
+            <input id="ajWhatsapp" inputmode="numeric" placeholder="5215512345678" />
+            <small>Solo números, con 52 y 1 al inicio para celulares de México. Déjalo vacío si no quieres usarlo.</small>
+          </label>
+          <label class="campo"><span>Hora de corte</span>
+            <input id="ajCorte" type="time" />
+            <small>Los pedidos hechos después de esta hora se entregan un día después. Vacío = sin hora de corte (siempre se puede pedir para mañana).</small>
+          </label>
+          <button class="btn primario" type="submit">Guardar ajustes</button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal cliente -->
+  <div class="modal-fondo" id="modalCliente">
+    <form class="modal" id="formCliente">
+      <h2 id="tituloCliente">Nuevo cliente</h2>
+      <label class="interruptor"><input type="checkbox" id="clActivo" checked /> Cliente activo (puede hacer pedidos)</label>
+      <label class="campo"><span>Nombre</span><input id="clNombre" maxlength="80" required /></label>
+      <div class="dos-columnas">
+        <label class="campo"><span>Tipo</span>
+          <select id="clTipo">
+            <option value="">—</option><option>Restaurante</option><option>Cafetería</option>
+            <option>Dark kitchen</option><option>Food truck</option><option>Público en general</option><option>Otro</option>
+          </select>
+        </label>
+        <label class="campo"><span>Teléfono</span><input id="clTelefono" inputmode="tel" maxlength="30" /></label>
+      </div>
+      <label class="campo"><span>Dirección de entrega</span><input id="clDireccion" maxlength="200" /></label>
+      <div class="dos-columnas">
+        <label class="campo"><span>Horario de recepción</span><input id="clHorario" maxlength="60" placeholder="Ej. 7:00 a 10:00" /></label>
+        <label class="campo"><span>Instrucciones de entrega</span><input id="clInstrucciones" maxlength="200" placeholder="Ej. puerta trasera" /></label>
+      </div>
+
+      <div class="campo">
+        <span>Sucursales (opcional: solo si cada sucursal pide por separado)</span>
+        <div class="lista-editable" id="clSucursales"></div>
+        <button type="button" class="btn chico" id="btnAgregarSucursal">+ Agregar sucursal</button>
+      </div>
+
+      <div class="campo">
+        <span>Productos que puede pedir</span>
+        <div class="casillas" id="clProductos"></div>
+      </div>
+
+      <div class="modal-acciones">
+        <button type="button" class="btn peligro" id="btnNuevoLink" hidden>Generar link nuevo</button>
+        <span style="flex:1"></span>
+        <button type="button" class="btn" data-cerrar="modalCliente">Cancelar</button>
+        <button type="submit" class="btn primario" id="btnGuardarCliente">Guardar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal producto -->
+  <div class="modal-fondo" id="modalProducto">
+    <form class="modal" id="formProducto">
+      <h2 id="tituloProducto">Nuevo producto</h2>
+      <label class="interruptor"><input type="checkbox" id="prActivo" checked /> Producto activo</label>
+      <label class="campo"><span>Nombre</span><input id="prNombre" maxlength="80" required placeholder="Ej. Frijol negro" /></label>
+      <div class="dos-columnas">
+        <label class="campo"><span>Categoría</span><input id="prCategoria" maxlength="40" list="categorias" placeholder="Ej. Granos" /></label>
+        <label class="campo"><span>Unidad de venta</span>
+          <select id="prUnidad">
+            <option value="pieza">Pieza</option><option value="kilo">Kilo</option><option value="litro">Litro</option>
+            <option value="caja">Caja</option><option value="costal">Costal</option><option value="bulto">Bulto</option><option value="paquete">Paquete</option>
+          </select>
+        </label>
+      </div>
+      <label class="campo"><span>Presentación</span><input id="prPresentacion" maxlength="60" placeholder="Ej. Costal 25 kg" /></label>
+      <datalist id="categorias"></datalist>
+      <div class="modal-acciones">
+        <button type="button" class="btn" data-cerrar="modalProducto">Cancelar</button>
+        <button type="submit" class="btn primario">Guardar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal importar -->
+  <div class="modal-fondo" id="modalImportar">
+    <form class="modal" id="formImportar">
+      <h2>Pegar productos desde Excel</h2>
+      <p style="color:var(--tenue);font-size:14px;margin-bottom:12px">
+        Copia en Excel o Google Sheets las columnas <strong>Nombre</strong>, <strong>Categoría</strong>,
+        <strong>Presentación</strong> y <strong>Unidad</strong> (en ese orden) y pégalas aquí. Unidades válidas:
+        pieza, kilo, litro, caja, costal, bulto, paquete.
+      </p>
+      <textarea class="entrada" id="textoImportar" rows="10" placeholder="Frijol negro&#9;Granos&#9;Costal 25 kg&#9;costal"></textarea>
+      <div id="vistaImportar" style="font-size:14px;color:var(--tenue);margin-top:8px"></div>
+      <div class="modal-acciones">
+        <button type="button" class="btn" data-cerrar="modalImportar">Cancelar</button>
+        <button type="submit" class="btn primario" id="btnConfirmarImportar" disabled>Agregar productos</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="comun.js"></script>
+  <script>
+    const db = conectarSupabase();
+    const $ = (id) => document.getElementById(id);
+
+    let productos = [];
+    let clientes = [];
+    let editandoCliente = null;
+    let editandoProducto = null;
+    let importables = [];
+
+    const urlCliente = (token) => new URL(`index.html?c=${token}`, location.href).href;
+
+    // ─────────── Acceso ───────────
+    async function revisarSesion() {
+      if (!db) {
+        $('accesoError').textContent = 'Falta configurar la conexión a Supabase en config.js.';
+        $('btnEntrar').disabled = true;
+        return;
+      }
+      const { data } = await db.auth.getSession();
+      if (data.session) await entrarAlPanel(data.session);
+    }
+
+    $('formAcceso').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('accesoError').textContent = '';
+      $('btnEntrar').disabled = true;
+      const { data, error } = await db.auth.signInWithPassword({ email: $('correo').value.trim(), password: $('contrasena').value });
+      $('btnEntrar').disabled = false;
+      if (error) { $('accesoError').textContent = 'Correo o contraseña incorrectos.'; return; }
+      await entrarAlPanel(data.session);
+    });
+
+    async function entrarAlPanel(sesion) {
+      const { data: esAdmin, error } = await db.rpc('es_admin');
+      if (error || !esAdmin) {
+        $('accesoError').textContent = 'Este usuario no tiene permiso de administrador.';
+        $('accesoNota').textContent = `Para darle permiso, ejecuta en Supabase: insert into administradores (user_id) values ('${sesion.user.id}');`;
+        await db.auth.signOut();
+        return;
+      }
+      $('pantallaAcceso').style.display = 'none';
+      $('pantallaPanel').style.display = 'block';
+      await Promise.all([cargarAjustes(), cargarProductos(), cargarClientes()]);
+      $('comprasDia').value = sumarDias(hoyMX(), 1);
+      cargarPedidos();
+    }
+
+    $('btnSalir').onclick = async () => { await db.auth.signOut(); location.reload(); };
+
+    // ─────────── Navegación ───────────
+    $('menu').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-vista]');
+      if (!b) return;
+      document.querySelectorAll('#menu button').forEach((x) => x.classList.toggle('activo', x === b));
+      document.querySelectorAll('.vista').forEach((v) => v.classList.toggle('activa', v.id === `vista-${b.dataset.vista}`));
+      if (b.dataset.vista === 'pedidos') cargarPedidos();
+      if (b.dataset.vista === 'compras') cargarCompras();
+    });
+
+    document.querySelectorAll('[data-cerrar]').forEach((b) => (b.onclick = () => $(b.dataset.cerrar).classList.remove('visible')));
+
+    // ─────────── Pedidos ───────────
+    $('filtroPeriodo').onchange = () => {
+      $('filtroDia').hidden = $('filtroPeriodo').value !== 'dia';
+      if (!$('filtroDia').hidden && !$('filtroDia').value) $('filtroDia').value = sumarDias(hoyMX(), 1);
+      cargarPedidos();
+    };
+    ['filtroDia', 'filtroCliente', 'filtroEstado'].forEach((id) => ($(id).onchange = cargarPedidos));
+    $('btnRecargarPedidos').onclick = cargarPedidos;
+
+    async function cargarPedidos() {
+      $('listaPedidos').innerHTML = '<div class="vacio">Cargando…</div>';
+      let q = db.from('pedidos')
+        .select('id, folio, fecha_entrega, estado, notas, creado, clientes(nombre, direccion, horario_recepcion, instrucciones), pedido_lineas(sucursal_nombre, producto_nombre, presentacion, unidad, cantidad)')
+        .limit(300);
+      const periodo = $('filtroPeriodo').value;
+      if (periodo === 'proximos') q = q.gte('fecha_entrega', hoyMX()).order('fecha_entrega').order('folio');
+      else if (periodo === 'dia') q = q.eq('fecha_entrega', $('filtroDia').value || hoyMX()).order('folio');
+      else q = q.order('fecha_entrega', { ascending: false }).order('folio', { ascending: false });
+      if ($('filtroCliente').value) q = q.eq('cliente_id', $('filtroCliente').value);
+      if ($('filtroEstado').value) q = q.eq('estado', $('filtroEstado').value);
+
+      const { data, error } = await q;
+      if (error) { $('listaPedidos').innerHTML = `<div class="vacio">${esc(mensajeError(error))}</div>`; return; }
+      if (!data.length) { $('listaPedidos').innerHTML = '<div class="vacio">No hay pedidos con estos filtros.</div>'; return; }
+
+      $('listaPedidos').innerHTML = `<div class="pedidos">${data.map((p) => {
+        const porSuc = {};
+        p.pedido_lineas.sort((a, b) => a.producto_nombre.localeCompare(b.producto_nombre))
+          .forEach((l) => (porSuc[l.sucursal_nombre] ||= []).push(l));
+        const c = p.clientes || {};
+        const datosEntrega = [c.direccion, c.horario_recepcion, c.instrucciones].filter(Boolean).join(' · ');
+        return `
+          <article class="pedido ${esc(p.estado)}">
+            <div class="pedido-cab">
+              <div>
+                <div class="pedido-cliente">${esc(c.nombre || '—')}</div>
+                <div class="pedido-sub">#${esc(p.folio)} · Entrega ${esc(fechaCorta(p.fecha_entrega))}</div>
+                ${datosEntrega ? `<div class="pedido-sub">${esc(datosEntrega)}</div>` : ''}
+              </div>
+              <span class="etiqueta ${esc(p.estado)}">${esc(ESTADOS[p.estado])}</span>
+            </div>
+            ${Object.entries(porSuc).map(([suc, ls]) => `
+              ${suc ? `<div class="pedido-suc">${esc(suc)}</div>` : '<div style="height:8px"></div>'}
+              ${ls.map((l) => `<div class="linea"><span>${esc(l.producto_nombre)} <small>${esc(textoPresentacion(l))}</small></span><strong>${esc(l.cantidad)}</strong></div>`).join('')}
+            `).join('')}
+            ${p.notas ? `<div class="pedido-notas">${esc(p.notas)}</div>` : ''}
+            <div class="pedido-pie">
+              <span class="pedido-sub">Recibido ${esc(new Date(p.creado).toLocaleString('es-MX', { timeZone: ZONA_HORARIA, dateStyle: 'short', timeStyle: 'short' }))}</span>
+              <select class="entrada" data-pedido="${esc(p.id)}">
+                ${Object.entries(ESTADOS).map(([v, t]) => `<option value="${v}" ${v === p.estado ? 'selected' : ''}>${t}</option>`).join('')}
+              </select>
+            </div>
+          </article>`;
+      }).join('')}</div>`;
+    }
+
+    $('listaPedidos').addEventListener('change', async (e) => {
+      const sel = e.target.closest('select[data-pedido]');
+      if (!sel) return;
+      if (sel.value === 'cancelado' && !confirm('¿Cancelar este pedido? El cliente podrá volver a pedir para ese día.')) { cargarPedidos(); return; }
+      const { error } = await db.from('pedidos').update({ estado: sel.value }).eq('id', sel.dataset.pedido);
+      if (error) mostrarToast(mensajeError(error), 'error');
+      else mostrarToast(`Pedido: ${ESTADOS[sel.value]}`);
+      cargarPedidos();
+    });
+
+    // ─────────── Por comprar ───────────
+    $('comprasDia').onchange = cargarCompras;
+
+    async function cargarCompras() {
+      const dia = $('comprasDia').value;
+      if (!dia) return;
+      $('comprasTitulo').textContent = `Por comprar · entregas del ${fechaLarga(dia, true)}`;
+      $('listaCompras').innerHTML = '<div class="vacio">Cargando…</div>';
+      const { data, error } = await db.from('pedido_lineas')
+        .select('producto_nombre, presentacion, unidad, cantidad, sucursal_nombre, pedidos!inner(fecha_entrega, estado, clientes(nombre))')
+        .eq('pedidos.fecha_entrega', dia)
+        .neq('pedidos.estado', 'cancelado');
+      if (error) { $('listaCompras').innerHTML = `<div class="vacio">${esc(mensajeError(error))}</div>`; return; }
+      if (!data.length) { $('listaCompras').innerHTML = '<div class="vacio">No hay pedidos para ese día.</div>'; return; }
+
+      const totales = {};
+      data.forEach((l) => {
+        const clave = [l.producto_nombre, l.presentacion, l.unidad].join('|');
+        const t = (totales[clave] ||= { ...l, total: 0, detalle: [] });
+        t.total += l.cantidad;
+        const quien = [l.pedidos.clientes?.nombre, l.sucursal_nombre].filter(Boolean).join(' / ');
+        t.detalle.push(`${quien}: ${l.cantidad}`);
+      });
+      const filas = Object.values(totales).sort((a, b) => a.producto_nombre.localeCompare(b.producto_nombre));
+      $('listaCompras').innerHTML = `
+        <div class="tabla-caja"><table>
+          <thead><tr><th>Producto</th><th>Presentación</th><th style="text-align:right">Total</th><th>Quién lo pidió</th></tr></thead>
+          <tbody>${filas.map((t) => `
+            <tr><td>${esc(t.producto_nombre)}</td><td>${esc(textoPresentacion(t))}</td>
+            <td class="num">${esc(t.total)}</td><td><small>${t.detalle.map(esc).join('<br>')}</small></td></tr>`).join('')}
+          </tbody></table></div>`;
+    }
+
+    // ─────────── Catálogo ───────────
+    async function cargarProductos() {
+      const { data, error } = await db.from('productos').select('*').order('categoria').order('nombre');
+      if (error) { mostrarToast(mensajeError(error), 'error'); return; }
+      productos = data;
+      $('categorias').innerHTML = [...new Set(productos.map((p) => p.categoria))].map((c) => `<option value="${esc(c)}">`).join('');
+      dibujarProductos();
+    }
+
+    function dibujarProductos() {
+      const filtro = $('buscarProducto').value.trim().toLowerCase();
+      const lista = productos.filter((p) => !filtro || `${p.nombre} ${p.categoria} ${p.presentacion}`.toLowerCase().includes(filtro));
+      if (!productos.length) { $('listaProductos').innerHTML = '<div class="vacio">Aún no hay productos. Agrega uno o pégalos desde Excel.</div>'; return; }
+      $('listaProductos').innerHTML = `
+        <div class="tabla-caja"><table>
+          <thead><tr><th>Producto</th><th>Categoría</th><th>Presentación</th><th>Unidad</th><th>Estado</th><th></th></tr></thead>
+          <tbody>${lista.map((p) => `
+            <tr class="${p.activo ? '' : 'inactivo'}">
+              <td><strong>${esc(p.nombre)}</strong></td><td>${esc(p.categoria)}</td><td>${esc(p.presentacion)}</td>
+              <td>${esc(UNIDADES[p.unidad] || p.unidad)}</td>
+              <td>${p.activo ? '<span class="etiqueta entregado">Activo</span>' : '<span class="etiqueta">Inactivo</span>'}</td>
+              <td><button class="btn chico" data-editar-producto="${esc(p.id)}">Editar</button></td>
+            </tr>`).join('')}
+          </tbody></table></div>`;
+    }
+    $('buscarProducto').oninput = dibujarProductos;
+
+    $('listaProductos').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-editar-producto]');
+      if (b) abrirProducto(productos.find((p) => p.id === b.dataset.editarProducto));
+    });
+    $('btnNuevoProducto').onclick = () => abrirProducto(null);
+
+    function abrirProducto(p) {
+      editandoProducto = p;
+      $('tituloProducto').textContent = p ? 'Editar producto' : 'Nuevo producto';
+      $('prNombre').value = p?.nombre || '';
+      $('prCategoria').value = p?.categoria || '';
+      $('prPresentacion').value = p?.presentacion || '';
+      $('prUnidad').value = p?.unidad || 'pieza';
+      $('prActivo').checked = p ? p.activo : true;
+      $('modalProducto').classList.add('visible');
+      $('prNombre').focus();
+    }
+
+    $('formProducto').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fila = {
+        nombre: $('prNombre').value.trim(),
+        categoria: $('prCategoria').value.trim() || 'General',
+        presentacion: $('prPresentacion').value.trim(),
+        unidad: $('prUnidad').value,
+        activo: $('prActivo').checked,
+      };
+      const { error } = editandoProducto
+        ? await db.from('productos').update(fila).eq('id', editandoProducto.id)
+        : await db.from('productos').insert(fila);
+      if (error) return mostrarToast(mensajeError(error), 'error');
+      $('modalProducto').classList.remove('visible');
+      mostrarToast('Producto guardado');
+      cargarProductos();
+    });
+
+    // Importar desde Excel
+    const ALIAS_UNIDAD = { kg: 'kilo', kilos: 'kilo', kilogramo: 'kilo', kilogramos: 'kilo', l: 'litro', lt: 'litro', litros: 'litro', piezas: 'pieza', pza: 'pieza', pzas: 'pieza', cajas: 'caja', costales: 'costal', bultos: 'bulto', paquetes: 'paquete' };
+    $('btnImportar').onclick = () => { $('textoImportar').value = ''; analizarImportar(); $('modalImportar').classList.add('visible'); };
+    $('textoImportar').oninput = analizarImportar;
+
+    function analizarImportar() {
+      importables = $('textoImportar').value.split(/\r?\n/).map((r) => r.split(/\t|;/).map((c) => c.trim()))
+        .filter((c) => c[0] && !/^nombre$/i.test(c[0]))
+        .map(([nombre, categoria, presentacion, unidad]) => {
+          let u = (unidad || 'pieza').toLowerCase();
+          u = ALIAS_UNIDAD[u] || u;
+          return { nombre: nombre.slice(0, 80), categoria: (categoria || 'General').slice(0, 40), presentacion: (presentacion || '').slice(0, 60), unidad: UNIDADES[u] ? u : 'pieza' };
+        });
+      $('vistaImportar').textContent = importables.length ? `${importables.length} productos listos para agregar.` : '';
+      $('btnConfirmarImportar').disabled = !importables.length;
+    }
+
+    $('formImportar').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const { error } = await db.from('productos').insert(importables);
+      if (error) return mostrarToast(mensajeError(error), 'error');
+      $('modalImportar').classList.remove('visible');
+      mostrarToast(`${importables.length} productos agregados`);
+      cargarProductos();
+    });
+
+    // ─────────── Clientes ───────────
+    async function cargarClientes() {
+      const { data, error } = await db.from('clientes')
+        .select('*, sucursales(id, nombre, orden), cliente_productos(producto_id)')
+        .order('nombre');
+      if (error) { mostrarToast(mensajeError(error), 'error'); return; }
+      clientes = data;
+      $('filtroCliente').innerHTML = '<option value="">Todos los clientes</option>' +
+        clientes.map((c) => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('');
+      dibujarClientes();
+    }
+
+    function dibujarClientes() {
+      if (!clientes.length) { $('listaClientes').innerHTML = '<div class="vacio">Aún no hay clientes. Crea el primero.</div>'; return; }
+      $('listaClientes').innerHTML = `<div class="clientes">${clientes.map((c) => {
+        const nSuc = c.sucursales.length, nProd = c.cliente_productos.length;
+        return `
+          <article class="cliente ${c.activo ? '' : 'inactivo'}">
+            <div class="cliente-cab">
+              <h3>${esc(c.nombre)}</h3>
+              ${c.activo ? '' : '<span class="etiqueta cancelado">Inactivo</span>'}
+            </div>
+            <div class="cliente-datos">
+              ${esc([c.tipo, c.telefono].filter(Boolean).join(' · ') || 'Sin datos de contacto')}<br>
+              ${nProd} ${nProd === 1 ? 'producto' : 'productos'}${nSuc ? ` · ${nSuc} sucursales` : ''}
+            </div>
+            <div class="link-caja"><code>${esc(urlCliente(c.token))}</code>
+              <button class="btn chico" data-copiar="${esc(c.id)}">Copiar link</button></div>
+            <div class="cliente-acciones">
+              <button class="btn chico" data-editar-cliente="${esc(c.id)}">Editar</button>
+              <button class="btn chico" data-enviar="${esc(c.id)}">Enviar por WhatsApp</button>
+            </div>
+          </article>`;
+      }).join('')}</div>`;
+    }
+
+    $('listaClientes').addEventListener('click', async (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      const c = clientes.find((x) => x.id === (b.dataset.copiar || b.dataset.editarCliente || b.dataset.enviar));
+      if (!c) return;
+      if (b.dataset.copiar) {
+        await navigator.clipboard.writeText(urlCliente(c.token));
+        mostrarToast('Link copiado');
+      } else if (b.dataset.enviar) {
+        const tel = (c.telefono || '').replace(/\D/g, '');
+        const texto = `Hola, este es tu link para hacer pedidos: ${urlCliente(c.token)}`;
+        window.open(`https://wa.me/${tel.length === 10 ? '521' + tel : tel}?text=${encodeURIComponent(texto)}`, '_blank');
+      } else {
+        abrirCliente(c);
+      }
+    });
+    $('btnNuevoCliente').onclick = () => abrirCliente(null);
+
+    function filaSucursal(s = {}) {
+      const div = document.createElement('div');
+      div.className = 'fila';
+      div.dataset.id = s.id || '';
+      div.innerHTML = `<input class="entrada" maxlength="60" placeholder="Nombre de la sucursal" value="${esc(s.nombre || '')}" />
+        <button type="button" class="btn chico" aria-label="Quitar sucursal">✕</button>`;
+      div.querySelector('button').onclick = () => div.remove();
+      $('clSucursales').appendChild(div);
+    }
+    $('btnAgregarSucursal').onclick = () => filaSucursal();
+
+    function abrirCliente(c) {
+      editandoCliente = c;
+      $('tituloCliente').textContent = c ? 'Editar cliente' : 'Nuevo cliente';
+      $('clNombre').value = c?.nombre || '';
+      $('clTipo').value = c?.tipo || '';
+      $('clTelefono').value = c?.telefono || '';
+      $('clDireccion').value = c?.direccion || '';
+      $('clHorario').value = c?.horario_recepcion || '';
+      $('clInstrucciones').value = c?.instrucciones || '';
+      $('clActivo').checked = c ? c.activo : true;
+      $('btnNuevoLink').hidden = !c;
+      $('clSucursales').innerHTML = '';
+      (c?.sucursales || []).sort((a, b) => a.orden - b.orden).forEach(filaSucursal);
+
+      const asignados = new Set((c?.cliente_productos || []).map((x) => x.producto_id));
+      const porCat = {};
+      productos.filter((p) => p.activo || asignados.has(p.id)).forEach((p) => (porCat[p.categoria] ||= []).push(p));
+      $('clProductos').innerHTML = Object.keys(porCat).length
+        ? Object.entries(porCat).map(([cat, ps]) => `
+            <div class="cat"><span>${esc(cat)}</span><button type="button" data-marcar-cat>Marcar todos</button></div>
+            ${ps.map((p) => `<label><input type="checkbox" value="${esc(p.id)}" ${asignados.has(p.id) ? 'checked' : ''} />
+              ${esc(p.nombre)} <small>${esc(textoPresentacion(p))}</small></label>`).join('')}`).join('')
+        : '<div class="vacio">Primero agrega productos en Catálogo.</div>';
+      $('modalCliente').classList.add('visible');
+    }
+
+    $('clProductos').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-marcar-cat]');
+      if (!b) return;
+      let el = b.parentElement.nextElementSibling;
+      const casillas = [];
+      while (el && el.tagName === 'LABEL') { casillas.push(el.querySelector('input')); el = el.nextElementSibling; }
+      const marcar = casillas.some((x) => !x.checked);
+      casillas.forEach((x) => (x.checked = marcar));
+    });
+
+    $('btnNuevoLink').onclick = async () => {
+      if (!confirm('El link actual dejará de funcionar y tendrás que enviarle el nuevo al cliente. ¿Continuar?')) return;
+      const nuevo = crypto.randomUUID().replace(/-/g, '');
+      const { error } = await db.from('clientes').update({ token: nuevo }).eq('id', editandoCliente.id);
+      if (error) return mostrarToast(mensajeError(error), 'error');
+      mostrarToast('Link nuevo generado');
+      $('modalCliente').classList.remove('visible');
+      cargarClientes();
+    };
+
+    $('formCliente').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = $('btnGuardarCliente');
+      btn.disabled = true;
+      try {
+        await guardarCliente();
+        $('modalCliente').classList.remove('visible');
+        mostrarToast('Cliente guardado');
+      } catch (err) {
+        mostrarToast(mensajeError(err), 'error');
+      } finally {
+        btn.disabled = false;
+        cargarClientes();
+      }
+    });
+
+    async function guardarCliente() {
+      const fila = {
+        nombre: $('clNombre').value.trim(),
+        tipo: $('clTipo').value || null,
+        telefono: $('clTelefono').value.trim() || null,
+        direccion: $('clDireccion').value.trim() || null,
+        horario_recepcion: $('clHorario').value.trim() || null,
+        instrucciones: $('clInstrucciones').value.trim() || null,
+        activo: $('clActivo').checked,
+      };
+      let id = editandoCliente?.id;
+      if (id) {
+        const { error } = await db.from('clientes').update(fila).eq('id', id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await db.from('clientes').insert(fila).select('id').single();
+        if (error) throw error;
+        id = data.id;
+      }
+
+      // Sucursales: actualizar, agregar y quitar
+      const filas = [...$('clSucursales').querySelectorAll('.fila')]
+        .map((f, i) => ({ id: f.dataset.id || null, nombre: f.querySelector('input').value.trim(), orden: i }))
+        .filter((s) => s.nombre);
+      const conservar = new Set(filas.filter((s) => s.id).map((s) => s.id));
+      const quitar = (editandoCliente?.sucursales || []).filter((s) => !conservar.has(s.id)).map((s) => s.id);
+      if (quitar.length) {
+        const { error } = await db.from('sucursales').delete().in('id', quitar);
+        if (error) throw error;
+      }
+      for (const s of filas.filter((x) => x.id)) {
+        const { error } = await db.from('sucursales').update({ nombre: s.nombre, orden: s.orden }).eq('id', s.id);
+        if (error) throw error;
+      }
+      const nuevas = filas.filter((x) => !x.id).map((s) => ({ cliente_id: id, nombre: s.nombre, orden: s.orden }));
+      if (nuevas.length) {
+        const { error } = await db.from('sucursales').insert(nuevas);
+        if (error) throw error;
+      }
+
+      // Productos asignados
+      const elegidos = [...$('clProductos').querySelectorAll('input:checked')].map((x) => ({ cliente_id: id, producto_id: x.value }));
+      const { error: errBorrar } = await db.from('cliente_productos').delete().eq('cliente_id', id);
+      if (errBorrar) throw errBorrar;
+      if (elegidos.length) {
+        const { error } = await db.from('cliente_productos').insert(elegidos);
+        if (error) throw error;
+      }
+    }
+
+    // ─────────── Ajustes ───────────
+    async function cargarAjustes() {
+      const { data, error } = await db.from('ajustes').select('*').single();
+      if (error) return;
+      $('ajNombre').value = data.nombre_negocio;
+      $('ajWhatsapp').value = data.whatsapp || '';
+      $('ajCorte').value = data.hora_corte ? data.hora_corte.slice(0, 5) : '';
+      $('panelNegocio').textContent = data.nombre_negocio;
+      document.title = `Administración · ${data.nombre_negocio}`;
+    }
+
+    $('formAjustes').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const whatsapp = $('ajWhatsapp').value.replace(/\D/g, '');
+      const { error } = await db.from('ajustes').update({
+        nombre_negocio: $('ajNombre').value.trim() || 'PROVEEDOR',
+        whatsapp: whatsapp || null,
+        hora_corte: $('ajCorte').value || null,
+      }).eq('id', 1);
+      if (error) return mostrarToast(/whatsapp/.test(error.message) ? 'El WhatsApp debe tener de 10 a 15 dígitos.' : mensajeError(error), 'error');
+      mostrarToast('Ajustes guardados');
+      cargarAjustes();
+    });
+
+    revisarSesion();
+  </script>
+</body>
+</html>

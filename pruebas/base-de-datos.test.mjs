@@ -1,0 +1,202 @@
+// Prueba la migración de Supabase en un Postgres local (PGlite), simulando lo
+// mínimo de Supabase: el esquema auth, auth.uid() y los roles anon/authenticated.
+// Uso: node base-de-datos.test.mjs
+import { crearBD } from './bd-prueba.mjs';
+import assert from 'node:assert/strict';
+
+const db = await crearBD();
+
+let fallas = 0;
+async function prueba(nombre, fn) {
+  try {
+    await db.exec('reset role; reset request.jwt.claim.sub;');
+    await fn();
+    console.log('  ok   ', nombre);
+  } catch (e) {
+    fallas++;
+    console.log('  FALLA', nombre, '\n        ', e.message);
+  }
+}
+const como = async (rol, sub = '') => {
+  await db.exec(`reset role; select set_config('request.jwt.claim.sub', '${sub}', false); set role ${rol};`);
+};
+const uno = async (sql, params) => (await db.query(sql, params)).rows[0];
+async function falla(sql, params, mensaje) {
+  await assert.rejects(db.query(sql, params), (e) => {
+    assert.match(e.message, mensaje);
+    return true;
+  });
+}
+
+// Datos de ejemplo (como superusuario)
+const ADMIN = '00000000-0000-0000-0000-00000000000a';
+const OTRO = '00000000-0000-0000-0000-00000000000b';
+await db.exec(`
+  insert into auth.users values ('${ADMIN}'), ('${OTRO}');
+  insert into administradores values ('${ADMIN}');
+  insert into productos (id, nombre, categoria, presentacion, unidad) values
+    ('10000000-0000-0000-0000-000000000001', 'Frijol negro', 'Granos', 'Costal 25 kg', 'costal'),
+    ('10000000-0000-0000-0000-000000000002', 'Aceite vegetal', 'Aceites', 'Caja 12 L', 'caja'),
+    ('10000000-0000-0000-0000-000000000003', 'Cloro', 'Limpieza', 'Galón 3.7 L', 'pieza');
+  insert into clientes (id, nombre, token) values
+    ('20000000-0000-0000-0000-000000000001', 'Café Centro', 'tokencentro'),
+    ('20000000-0000-0000-0000-000000000002', 'Cocina Norte', 'tokennorte');
+  insert into sucursales (id, cliente_id, nombre) values
+    ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002', 'Roma'),
+    ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'Condesa');
+  insert into cliente_productos values
+    ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001'),
+    ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002'),
+    ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000003');
+`);
+const P1 = '10000000-0000-0000-0000-000000000001';
+const P2 = '10000000-0000-0000-0000-000000000002';
+const P3 = '10000000-0000-0000-0000-000000000003';
+const SUC_ROMA = '30000000-0000-0000-0000-000000000001';
+const fechaMin = (await uno('select fecha_minima_entrega()::text as f')).f;
+const sumarDias = (iso, n) => {
+  const d = new Date(iso + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+const lineas = (arr) => JSON.stringify(arr);
+
+console.log('Base de datos');
+
+await prueba('el público no puede leer ni escribir las tablas', async () => {
+  await como('anon');
+  for (const t of ['clientes', 'pedidos', 'productos', 'ajustes', 'pedido_lineas']) {
+    await falla(`select * from ${t}`, [], /permission denied/);
+  }
+  await falla(`insert into productos (nombre) values ('x')`, [], /permission denied/);
+});
+
+await prueba('un usuario con sesión que no es admin no ve nada', async () => {
+  await como('authenticated', OTRO);
+  assert.equal((await db.query('select * from clientes')).rows.length, 0);
+  await falla(`insert into productos (nombre) values ('x')`, [], /row-level security/);
+});
+
+await prueba('el admin ve y edita todo', async () => {
+  await como('authenticated', ADMIN);
+  assert.equal((await db.query('select * from clientes')).rows.length, 2);
+  await db.query(`update ajustes set whatsapp = '5215512345678' where id = 1`);
+  assert.equal((await uno('select whatsapp from ajustes')).whatsapp, '5215512345678');
+});
+
+await prueba('cliente_por_token devuelve solo sus productos y sucursales', async () => {
+  await como('anon');
+  const r = (await uno(`select cliente_por_token('tokennorte') as r`)).r;
+  assert.equal(r.cliente.nombre, 'Cocina Norte');
+  assert.deepEqual(r.productos.map((p) => p.nombre), ['Cloro']);
+  assert.deepEqual(r.sucursales.map((s) => s.nombre).sort(), ['Condesa', 'Roma']);
+  assert.equal(r.negocio.nombre, 'PROVEEDOR');
+  assert.equal(r.fecha_minima, fechaMin);
+});
+
+await prueba('un token inválido no devuelve nada', async () => {
+  await como('anon');
+  assert.equal((await uno(`select cliente_por_token('nope') as r`)).r, null);
+});
+
+await prueba('la fecha mínima es mañana sin hora de corte', async () => {
+  const hoy = (await uno(`select (now() at time zone 'America/Mexico_City')::date::text as h`)).h;
+  assert.equal(fechaMin, sumarDias(hoy, 1));
+});
+
+await prueba('crear un pedido válido', async () => {
+  await como('anon');
+  const r = (await uno(`select crear_pedido('tokencentro', $1, $2, 'Tocar el timbre') as r`,
+    [fechaMin, lineas([{ producto_id: P1, cantidad: 2 }, { producto_id: P2, cantidad: 1 }])])).r;
+  assert.ok(r.folio > 0);
+  await como('authenticated', ADMIN);
+  const l = await db.query(`select producto_nombre, cantidad from pedido_lineas order by producto_nombre`);
+  assert.deepEqual(l.rows.map((x) => [x.producto_nombre, x.cantidad]), [['Aceite vegetal', 1], ['Frijol negro', 2]]);
+});
+
+await prueba('no permite dos pedidos el mismo día', async () => {
+  await como('anon');
+  await falla(`select crear_pedido('tokencentro', $1, $2)`,
+    [fechaMin, lineas([{ producto_id: P1, cantidad: 1 }])], /Ya tienes un pedido para ese día/);
+});
+
+await prueba('no permite pedir para hoy ni fechas pasadas', async () => {
+  await como('anon');
+  await falla(`select crear_pedido('tokencentro', $1, $2)`,
+    [sumarDias(fechaMin, -1), lineas([{ producto_id: P1, cantidad: 1 }])], /ya no está disponible/);
+});
+
+await prueba('no permite productos que no tiene asignados', async () => {
+  await como('anon');
+  await falla(`select crear_pedido('tokencentro', $1, $2)`,
+    [sumarDias(fechaMin, 1), lineas([{ producto_id: P3, cantidad: 1 }])], /ya no está disponible/);
+});
+
+await prueba('rechaza cantidades inválidas y pedidos vacíos', async () => {
+  await como('anon');
+  const f = sumarDias(fechaMin, 2);
+  await falla(`select crear_pedido('tokencentro', $1, $2)`, [f, lineas([{ producto_id: P1, cantidad: 0 }])], /Cantidad inválida/);
+  await falla(`select crear_pedido('tokencentro', $1, $2)`, [f, lineas([{ producto_id: P1, cantidad: 1000 }])], /Cantidad inválida/);
+  await falla(`select crear_pedido('tokencentro', $1, $2)`, [f, '[]'], /no tiene productos/);
+});
+
+await prueba('un pedido fallido no deja rastros', async () => {
+  await como('authenticated', ADMIN);
+  const n = (await uno(`select count(*)::int as n from pedidos`)).n;
+  assert.equal(n, 1);
+});
+
+await prueba('clientes con sucursales deben indicar la sucursal', async () => {
+  await como('anon');
+  const f = sumarDias(fechaMin, 1);
+  await falla(`select crear_pedido('tokennorte', $1, $2)`, [f, lineas([{ producto_id: P3, cantidad: 1 }])], /sucursal/);
+  await falla(`select crear_pedido('tokennorte', $1, $2)`,
+    [f, lineas([{ producto_id: P3, cantidad: 1, sucursal_id: '30000000-0000-0000-0000-0000000000ff' }])], /Sucursal inválida/);
+  const r = (await uno(`select crear_pedido('tokennorte', $1, $2) as r`,
+    [f, lineas([{ producto_id: P3, cantidad: 4, sucursal_id: SUC_ROMA }])])).r;
+  assert.ok(r.folio);
+});
+
+await prueba('pedidos_por_token solo devuelve los pedidos de ese cliente', async () => {
+  await como('anon');
+  const r = (await uno(`select pedidos_por_token('tokennorte') as r`)).r;
+  assert.equal(r.length, 1);
+  assert.equal(r[0].estado, 'recibido');
+  assert.deepEqual(r[0].lineas, [{ sucursal: 'Roma', producto: 'Cloro', presentacion: 'Galón 3.7 L', unidad: 'pieza', cantidad: 4 }]);
+});
+
+await prueba('un cliente desactivado ya no puede pedir', async () => {
+  await como('authenticated', ADMIN);
+  await db.query(`update clientes set activo = false where token = 'tokencentro'`);
+  await como('anon');
+  assert.equal((await uno(`select cliente_por_token('tokencentro') as r`)).r, null);
+  await falla(`select crear_pedido('tokencentro', $1, $2)`,
+    [sumarDias(fechaMin, 3), lineas([{ producto_id: P1, cantidad: 1 }])], /Link inválido/);
+});
+
+await prueba('un pedido cancelado libera el día', async () => {
+  await como('authenticated', ADMIN);
+  await db.query(`update clientes set activo = true where token = 'tokencentro'`);
+  await db.query(`update pedidos set estado = 'cancelado' where fecha_entrega = $1`, [fechaMin]);
+  await como('anon');
+  const r = (await uno(`select crear_pedido('tokencentro', $1, $2) as r`,
+    [fechaMin, lineas([{ producto_id: P1, cantidad: 3 }])])).r;
+  assert.ok(r.folio);
+});
+
+await prueba('la hora de corte recorre la fecha mínima un día', async () => {
+  await db.exec(`update ajustes set hora_corte = '00:00'`);
+  assert.equal((await uno('select fecha_minima_entrega()::text as f')).f, sumarDias(fechaMin, 1));
+  await db.exec(`update ajustes set hora_corte = null`);
+});
+
+await prueba('el público no puede usar funciones internas', async () => {
+  await como('anon');
+  await falla(`select es_admin()`, [], /permission denied/);
+});
+
+if (fallas) {
+  console.log(`\n${fallas} prueba(s) fallaron`);
+  process.exit(1);
+}
+console.log('\nTodas las pruebas de base de datos pasaron');
