@@ -44,10 +44,11 @@ await db.exec(`
   insert into sucursales (id, cliente_id, nombre) values
     ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002', 'Roma'),
     ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'Condesa');
-  insert into cliente_productos values
-    ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001'),
-    ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002'),
-    ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000003');
+  update productos set precio_base = 500, costo = 400 where nombre = 'Frijol negro';
+  insert into cliente_productos (cliente_id, producto_id, precio) values
+    ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 450.50),
+    ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', 380),
+    ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000003', 55);
 `);
 const P1 = '10000000-0000-0000-0000-000000000001';
 const P2 = '10000000-0000-0000-0000-000000000002';
@@ -162,7 +163,8 @@ await prueba('pedidos_por_token solo devuelve los pedidos de ese cliente', async
   const r = (await uno(`select pedidos_por_token('tokennorte') as r`)).r;
   assert.equal(r.length, 1);
   assert.equal(r[0].estado, 'recibido');
-  assert.deepEqual(r[0].lineas, [{ sucursal: 'Roma', producto: 'Cloro', presentacion: 'Galón 3.7 L', unidad: 'pieza', cantidad: 4 }]);
+  assert.deepEqual(r[0].lineas, [{ sucursal: 'Roma', producto: 'Cloro', presentacion: 'Galón 3.7 L', unidad: 'pieza', cantidad: 4, precio_unitario: 55, importe: 220 }]);
+  assert.equal(r[0].total, 220);
 });
 
 await prueba('un cliente desactivado ya no puede pedir', async () => {
@@ -188,6 +190,53 @@ await prueba('la hora de corte recorre la fecha mínima un día', async () => {
   await db.exec(`update ajustes set hora_corte = '00:00'`);
   assert.equal((await uno('select fecha_minima_entrega()::text as f')).f, sumarDias(fechaMin, 1));
   await db.exec(`update ajustes set hora_corte = null`);
+});
+
+await prueba('el cliente ve su precio pero nunca el costo ni el precio base', async () => {
+  await como('anon');
+  const r = (await uno(`select cliente_por_token('tokencentro') as r`)).r;
+  const frijol = r.productos.find((p) => p.nombre === 'Frijol negro');
+  assert.equal(frijol.precio, 450.5);
+  assert.equal('costo' in frijol, false);
+  assert.equal('precio_base' in frijol, false);
+  assert.doesNotMatch(JSON.stringify(r), /costo|precio_base/);
+});
+
+await prueba('el pedido congela el precio y calcula el total', async () => {
+  await como('anon');
+  const f = sumarDias(fechaMin, 5);
+  const r = (await uno(`select crear_pedido('tokencentro', $1, $2) as r`,
+    [f, lineas([{ producto_id: P1, cantidad: 2 }, { producto_id: P2, cantidad: 1 }])])).r;
+  assert.equal(Number(r.total), 1281);
+  await como('authenticated', ADMIN);
+  await db.query(`update cliente_productos set precio = 999 where producto_id = $1`, [P1]);
+  const l = await uno(`select l.precio_unitario::float as pu, l.importe::float as imp from pedido_lineas l
+    join pedidos p on p.id = l.pedido_id where p.fecha_entrega = $1 and l.producto_id = $2`, [f, P1]);
+  assert.deepEqual(l, { pu: 450.5, imp: 901 });
+  await db.query(`update cliente_productos set precio = 450.50 where producto_id = $1`, [P1]);
+});
+
+await prueba('no permite pedir productos sin precio', async () => {
+  await como('authenticated', ADMIN);
+  await db.query(`update cliente_productos set precio = 0 where producto_id = $1`, [P2]);
+  await como('anon');
+  await falla(`select crear_pedido('tokencentro', $1, $2)`,
+    [sumarDias(fechaMin, 6), lineas([{ producto_id: P2, cantidad: 1 }])], /sin precio/);
+  await como('authenticated', ADMIN);
+  await db.query(`update cliente_productos set precio = 380 where producto_id = $1`, [P2]);
+});
+
+await prueba('resumen_clientes: solo el admin lo ve, con conteos correctos', async () => {
+  await como('anon');
+  await falla('select * from resumen_clientes', [], /permission denied/);
+  await como('authenticated', OTRO);
+  assert.equal((await db.query('select * from resumen_clientes')).rows.length, 0);
+  await como('authenticated', ADMIN);
+  await db.query(`update cliente_productos set precio = 0 where producto_id = $1`, [P2]);
+  const r = await uno(`select productos, productos_sin_precio, ultima_entrega is not null as con_pedido
+    from resumen_clientes where nombre = 'Café Centro'`);
+  assert.deepEqual(r, { productos: 2, productos_sin_precio: 1, con_pedido: true });
+  await db.query(`update cliente_productos set precio = 380 where producto_id = $1`, [P2]);
 });
 
 await prueba('el público no puede usar funciones internas', async () => {

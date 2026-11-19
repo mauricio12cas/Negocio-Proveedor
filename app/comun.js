@@ -46,6 +46,20 @@ function fechaCorta(iso) {
   });
 }
 
+const FORMATO_DINERO = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+
+/** $1,234.50 */
+function dinero(n) {
+  return FORMATO_DINERO.format(Number(n) || 0);
+}
+
+/** Margen sobre el precio de venta, en %. null si falta el costo o el precio. */
+function margen(precio, costo) {
+  precio = Number(precio);
+  if (costo === null || costo === undefined || costo === '' || !precio) return null;
+  return ((precio - Number(costo)) / precio) * 100;
+}
+
 function textoPresentacion(p) {
   return [p.presentacion, p.unidad ? `(${UNIDADES[p.unidad] || p.unidad})` : ''].filter(Boolean).join(' ');
 }

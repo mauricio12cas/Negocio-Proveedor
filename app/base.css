@@ -28,6 +28,7 @@ body {
   min-height: 100vh;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
 button { cursor: pointer; }
 
 .btn {
@@ -92,6 +93,45 @@ button { cursor: pointer; }
 }
 .modal h2 { font-size: 19px; margin-bottom: 16px; }
 .modal-acciones { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+
+/* Tarjetas de métricas */
+.metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.metrica {
+  background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio);
+  padding: 14px 16px; text-align: left;
+}
+button.metrica:hover { border-color: var(--acento); }
+.metrica .valor { font-size: 28px; font-weight: 800; line-height: 1.1; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.metrica .rotulo { font-size: 13px; color: var(--tenue); font-weight: 600; }
+.metrica .detalle { font-size: 13px; color: var(--tenue); margin-top: 2px; }
+.metrica.alerta { border-color: #f0c987; background: var(--aviso-suave); }
+
+/* Pasos de un asistente */
+.pasos { display: flex; gap: 6px; margin-bottom: 18px; overflow-x: auto; }
+.pasos button {
+  flex: 1; min-width: 92px; border: 0; background: transparent; text-align: left;
+  padding: 8px 4px 6px; border-top: 3px solid var(--borde); font-size: 13px; color: var(--tenue); font-weight: 600;
+}
+.pasos button span { display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+.pasos button.hecho { border-top-color: var(--resalte); color: var(--texto); }
+.pasos button.actual { border-top-color: var(--acento); color: var(--texto); }
+.pasos button:disabled { cursor: default; }
+
+/* Tira de días */
+.tira-dias { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; scroll-snap-type: x proximity; }
+.tira-dias button {
+  flex: 0 0 auto; width: 62px; padding: 8px 0 10px; border-radius: 14px; border: 1px solid var(--borde);
+  background: var(--superficie); text-align: center; scroll-snap-align: start; position: relative;
+}
+.tira-dias button .dia-sem { display: block; font-size: 12px; color: var(--tenue); font-weight: 600; text-transform: capitalize; }
+.tira-dias button .dia-num { display: block; font-size: 20px; font-weight: 800; }
+.tira-dias button .dia-mes { display: block; font-size: 11px; color: var(--tenue); text-transform: capitalize; }
+.tira-dias button.con-pedido::after {
+  content: ''; position: absolute; top: 6px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--resalte);
+}
+.tira-dias button.seleccionado { background: var(--acento); border-color: var(--acento); color: var(--acento-texto); }
+.tira-dias button.seleccionado .dia-sem, .tira-dias button.seleccionado .dia-mes { color: var(--acento-texto); }
+.tira-dias button.seleccionado::after { background: var(--acento-texto); }
 
 @media print {
   .no-imprimir { display: none !important; }
