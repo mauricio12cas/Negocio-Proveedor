@@ -1,0 +1,12 @@
+{
+  "name": "pruebas-pedidos",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node base-de-datos.test.mjs && node pantallas.test.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.2.17",
+    "@supabase/supabase-js": "2.45.4"
+  }
+}
