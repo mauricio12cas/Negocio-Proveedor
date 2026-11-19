@@ -2,122 +2,210 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Administración</title>
+  <script>try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro') document.documentElement.dataset.tema = t; } catch (e) {}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
   <link rel="stylesheet" href="base.css" />
   <style>
     /* Acceso */
-    #pantallaAcceso { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
-    .acceso { width: 100%; max-width: 380px; background: var(--superficie); border: 1px solid var(--borde); border-radius: 16px; padding: 26px 22px; box-shadow: var(--sombra); }
-    .acceso .negocio { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--tenue); }
-    .acceso h1 { font-size: 22px; margin: 4px 0 18px; }
-    .acceso .btn { width: 100%; padding: 12px; }
-    .acceso-error { color: var(--peligro); font-size: 14px; margin-top: 10px; }
-    .acceso-nota { font-size: 13px; color: var(--tenue); margin-top: 12px; word-break: break-all; }
+    #pantallaAcceso {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+      background:
+        radial-gradient(900px 500px at 15% -10%, color-mix(in srgb, var(--acento) 16%, transparent), transparent 70%),
+        radial-gradient(700px 400px at 110% 110%, color-mix(in srgb, var(--acento) 10%, transparent), transparent 70%),
+        var(--fondo);
+    }
+    .acceso { width: 100%; max-width: 400px; background: var(--superficie); border: 1px solid var(--borde); border-radius: 18px; padding: 30px 28px; box-shadow: var(--sombra-3); }
+    .acceso .marca { margin-bottom: 22px; }
+    .acceso .marca-logo { width: 40px; height: 40px; border-radius: 11px; }
+    .acceso h1 { font-size: 22px; letter-spacing: -.02em; }
+    .acceso .sub { color: var(--tenue); margin: 4px 0 22px; }
+    .acceso .btn { width: 100%; padding: 11px; margin-top: 4px; }
+    .acceso-error { color: var(--peligro); font-size: 14px; margin-top: 12px; }
+    .acceso-error:empty { display: none; }
+    .acceso-nota { font-size: 12px; color: var(--tenue); margin-top: 10px; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
     /* Estructura */
     #pantallaPanel { display: none; }
-    .lateral { position: fixed; inset: 0 auto 0 0; width: 220px; background: var(--superficie); border-right: 1px solid var(--borde); display: flex; flex-direction: column; padding: 18px 12px; }
-    .lateral .negocio { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--tenue); padding: 0 8px 14px; }
+    .lateral {
+      position: fixed; inset: 0 auto 0 0; width: 248px; background: var(--superficie); border-right: 1px solid var(--borde);
+      display: flex; flex-direction: column; padding: 18px 14px 14px; z-index: 40;
+    }
+    .lateral > .marca { padding: 2px 8px 22px; }
+    .lateral .marca-nombre { font-size: 15px; }
+    .menu-titulo { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--tenue-2); padding: 0 10px 8px; text-transform: uppercase; }
     .menu { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-    .menu button { text-align: left; border: 0; background: transparent; padding: 10px 12px; border-radius: 10px; font-weight: 600; color: var(--tenue); }
+    .menu button {
+      display: flex; align-items: center; gap: 11px; text-align: left; border: 0; background: transparent;
+      padding: 9px 10px; border-radius: 9px; font-weight: 550; color: var(--texto-2); font-size: 14px; position: relative;
+    }
+    .menu button .ico { color: var(--tenue); }
     .menu button:hover { background: var(--superficie-2); color: var(--texto); }
-    .menu button.activo { background: var(--acento); color: var(--acento-texto); }
-    .principal { margin-left: 220px; padding: 28px 32px 60px; max-width: 1200px; }
-    .encabezado { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-    .encabezado h1 { font-size: 24px; }
-    .encabezado p { color: var(--tenue); font-size: 14px; margin-top: 2px; }
+    .menu button.activo { background: var(--acento-suave); color: var(--acento-tinta); font-weight: 650; }
+    .menu button.activo .ico { color: var(--acento-tinta); }
+    .menu button .insignia { margin-left: auto; }
+    .lateral-pie { border-top: 1px solid var(--borde); padding-top: 12px; display: grid; gap: 10px; }
+    .lateral-pie .segmentos { width: 100%; }
+    .lateral-pie .segmentos button { flex: 1; justify-content: center; }
+    .usuario { display: flex; align-items: center; gap: 10px; padding: 2px 2px 0 4px; min-width: 0; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--superficie-3); color: var(--texto-2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .usuario-datos { flex: 1; min-width: 0; }
+    .usuario-datos div { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .usuario-datos small { font-size: 12px; color: var(--tenue); }
+
+    .principal { margin-left: 248px; padding: 30px 36px 70px; max-width: 1320px; }
+    .encabezado { display: flex; justify-content: space-between; align-items: flex-end; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+    .encabezado h1 { font-size: 24px; font-weight: 700; letter-spacing: -.02em; }
+    .encabezado p { color: var(--tenue); font-size: 14px; margin-top: 3px; }
+    .acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .vista { display: none; }
-    .vista.activa { display: block; }
+    .vista.activa { display: block; animation: aparecer .2s ease-out; }
     .filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
-    .filtros .entrada { width: auto; min-width: 150px; }
+    .filtros .entrada { width: auto; min-width: 160px; }
+    .filtros .buscador { flex: 1; min-width: 220px; max-width: 360px; }
+    .filtros .buscador .entrada { width: 100%; }
 
     @media (max-width: 860px) {
-      .lateral { position: sticky; top: 0; inset: auto; width: auto; height: auto; flex-direction: row; align-items: center; padding: 8px; gap: 8px; z-index: 40; border-right: 0; border-bottom: 1px solid var(--borde); overflow-x: auto; }
-      .lateral .negocio { display: none; }
-      .menu { flex-direction: row; }
-      .menu button { white-space: nowrap; padding: 8px 12px; }
-      .principal { margin-left: 0; padding: 18px 14px 60px; }
+      .lateral { position: sticky; top: 0; inset: auto; width: auto; height: auto; flex-direction: row; align-items: center; padding: 10px 14px; border-right: 0; border-bottom: 1px solid var(--borde); }
+      .lateral > .marca { padding: 0; flex: 1; }
+      .menu-titulo, .usuario-datos { display: none; }
+      .menu {
+        position: fixed; left: 0; right: 0; bottom: 0; flex-direction: row; gap: 0; justify-content: space-around;
+        background: var(--superficie); border-top: 1px solid var(--borde); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); z-index: 45;
+        box-shadow: 0 -4px 16px rgba(15, 23, 42, .06);
+      }
+      .menu button { flex-direction: column; gap: 3px; font-size: 10.5px; padding: 6px 2px; flex: 1; align-items: center; text-align: center; }
+      .menu button.activo { background: transparent; }
+      .menu button .insignia { position: absolute; top: 1px; left: calc(50% + 6px); margin: 0; min-width: 17px; height: 17px; font-size: 10px; }
+      .lateral-pie { border: 0; padding: 0; display: flex; align-items: center; }
+      .lateral-pie .segmentos { width: auto; }
+      .lateral-pie .segmentos button span { display: none; }
+      .usuario .avatar { display: none; }
+      .principal { margin-left: 0; padding: 20px 14px 96px; }
+      .encabezado h1 { font-size: 21px; }
     }
 
     /* Inicio */
-    .bloque { margin-top: 22px; }
-    .bloque h2 { font-size: 16px; margin-bottom: 10px; }
-    .lista { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); }
-    .lista-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--borde); font-size: 14px; }
+    .rejilla-inicio { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+    .rejilla-inicio .ancho-completo { grid-column: 1 / -1; }
+    @media (max-width: 980px) { .rejilla-inicio { grid-template-columns: 1fr; } }
+    .grafica-caja { position: relative; height: 280px; }
+    .grafica-total { text-align: right; }
+    .grafica-total strong { display: block; font-size: 22px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .grafica-total small { color: var(--tenue); font-size: 12px; }
+    .barras { display: grid; gap: 14px; }
+    .barra-fila { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: baseline; font-size: 14px; }
+    .barra-fila .nombre { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .barra-fila .nombre small { color: var(--tenue); font-weight: 400; margin-left: 6px; }
+    .barra-fila .valor { font-weight: 650; font-variant-numeric: tabular-nums; }
+    .barra-pista { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--superficie-2); overflow: hidden; }
+    .barra-relleno { height: 100%; border-radius: 0 4px 4px 0; background: var(--acento); min-width: 4px; }
+    .lista-fila { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--borde); font-size: 14px; }
     .lista-fila:first-child { border-top: 0; }
-    .lista-fila small { color: var(--tenue); display: block; }
-    .dos-bloques { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
-    @media (max-width: 860px) { .dos-bloques { grid-template-columns: 1fr; } }
+    .lista-fila > div { min-width: 0; display: flex; gap: 11px; align-items: flex-start; }
+    .lista-fila small { color: var(--tenue); display: block; font-size: 13px; }
+    .lista-fila .ico-caja { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--superficie-2); color: var(--tenue); }
+    .lista-fila .ico-caja.aviso { background: var(--aviso-suave); color: var(--aviso); }
+    .lista-fila .ico-caja.peligro { background: var(--peligro-suave); color: var(--peligro); }
+    .lista-fila .ico-caja .ico { width: 16px; height: 16px; }
+    .lista-vacia { padding: 22px 18px; color: var(--tenue); font-size: 14px; display: flex; gap: 10px; align-items: center; }
+    .lista-vacia .ico { color: var(--exito); }
+    .grafica-vacia { height: 100%; display: flex; align-items: center; justify-content: center; color: var(--tenue); text-align: center; }
 
     /* Pedidos */
-    .pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
-    .pedido { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px; }
-    .pedido.cancelado { opacity: .55; }
-    .pedido-cab { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
-    .pedido-cliente { font-weight: 700; font-size: 16px; }
-    .pedido-sub { font-size: 13px; color: var(--tenue); }
-    .pedido-suc { font-size: 12px; font-weight: 700; color: var(--tenue); text-transform: uppercase; letter-spacing: .06em; margin-top: 10px; }
-    .linea { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 3px 0; border-bottom: 1px dashed var(--borde); }
+    .pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+    @media (max-width: 420px) { .pedidos { grid-template-columns: 1fr; } }
+    .pedido { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); box-shadow: var(--sombra-1); display: flex; flex-direction: column; }
+    .pedido.cancelado { opacity: .6; }
+    .pedido-cab { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; padding: 16px 16px 12px; }
+    .pedido-folio { font-size: 12px; font-weight: 700; color: var(--tenue); font-variant-numeric: tabular-nums; }
+    .pedido-cliente { font-weight: 700; font-size: 16px; letter-spacing: -.01em; margin-top: 1px; }
+    .pedido-sub { font-size: 13px; color: var(--tenue); display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+    .pedido-sub .ico { width: 14px; height: 14px; }
+    .pedido-cuerpo { padding: 0 16px; flex: 1; }
+    .pedido-suc { font-size: 11px; font-weight: 700; color: var(--tenue); text-transform: uppercase; letter-spacing: .07em; margin: 10px 0 4px; }
+    .linea { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 6px 0; border-bottom: 1px solid var(--borde); }
     .linea:last-child { border-bottom: 0; }
+    .linea .cant { display: inline-flex; min-width: 26px; justify-content: center; font-weight: 700; background: var(--superficie-2); border-radius: 6px; padding: 0 6px; margin-right: 6px; font-variant-numeric: tabular-nums; }
     .linea small { color: var(--tenue); }
-    .linea .importe { white-space: nowrap; font-variant-numeric: tabular-nums; }
-    .pedido-total { display: flex; justify-content: space-between; font-weight: 800; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--borde); }
-    .pedido-notas { font-size: 13px; background: var(--aviso-suave); color: var(--aviso); border-radius: 8px; padding: 8px 10px; margin-top: 10px; white-space: pre-wrap; }
-    .pedido-pie { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--borde); }
-    .pedido-pie select { width: auto; }
+    .linea .importe { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 550; }
+    .pedido-total { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; margin: 6px 16px 0; padding: 12px 0; border-top: 1px dashed var(--borde-fuerte); }
+    .pedido-total span:last-child { font-size: 18px; font-variant-numeric: tabular-nums; }
+    .pedido-notas { font-size: 13px; background: var(--aviso-suave); color: var(--aviso); border-radius: 8px; padding: 8px 10px; margin: 0 16px 12px; white-space: pre-wrap; }
+    .pedido-pie { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--borde); background: var(--superficie-2); border-radius: 0 0 var(--radio) var(--radio); }
+    .pedido-pie select { width: auto; flex: 1; max-width: 180px; padding-top: 6px; padding-bottom: 6px; }
 
     /* Tablas */
-    .tabla-caja { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th { text-align: left; font-size: 12px; color: var(--tenue); font-weight: 700; padding: 10px 12px; background: var(--superficie-2); white-space: nowrap; }
-    th.num, td.num { text-align: right; }
-    td { padding: 10px 12px; border-top: 1px solid var(--borde); vertical-align: middle; }
-    td.num { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    td small { color: var(--tenue); }
-    tr.inactivo td { color: var(--tenue); }
     .margen-bajo { color: var(--peligro); }
+    tr.inactivo td { color: var(--tenue); }
+    .producto-nombre strong { font-weight: 600; }
+    .chip-cat { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--superficie-2); color: var(--texto-2); }
 
     /* Clientes */
-    .clientes { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-    .cliente { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px; }
-    .cliente.inactivo { opacity: .6; }
-    .cliente-cab { display: flex; justify-content: space-between; gap: 8px; }
-    .cliente h3 { font-size: 16px; }
-    .cliente-datos { font-size: 13px; color: var(--tenue); margin: 6px 0 10px; }
-    .link-caja { display: flex; gap: 6px; align-items: center; background: var(--superficie-2); border-radius: 8px; padding: 6px 6px 6px 10px; }
-    .link-caja code { flex: 1; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tenue); }
-    .cliente-acciones { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .clientes { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+    .cliente { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px; box-shadow: var(--sombra-1); display: flex; flex-direction: column; gap: 12px; }
+    .cliente.inactivo { opacity: .65; }
+    .cliente-cab { display: flex; gap: 12px; align-items: center; }
+    .cliente-cab .avatar { width: 40px; height: 40px; border-radius: 11px; background: var(--acento-suave); color: var(--acento-tinta); font-size: 14px; }
+    .cliente-cab > div { flex: 1; min-width: 0; }
+    .cliente h3 { font-size: 15px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cliente-sub { font-size: 13px; color: var(--tenue); }
+    .cliente-datos { display: flex; gap: 6px; flex-wrap: wrap; }
+    .cliente-datos .etiqueta { font-weight: 550; }
+    .link-caja { display: flex; gap: 6px; align-items: center; background: var(--superficie-2); border: 1px solid var(--borde); border-radius: 9px; padding: 5px 5px 5px 10px; }
+    .link-caja .ico { color: var(--tenue); width: 15px; height: 15px; }
+    .link-caja code { flex: 1; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tenue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .cliente-acciones { display: flex; gap: 6px; flex-wrap: wrap; }
 
     /* Asistente de cliente */
-    .modal.ancho { max-width: 860px; }
+    .modal.ancho { max-width: 880px; }
     .paso { display: none; }
     .paso.actual { display: block; }
     .lista-editable .fila { display: flex; gap: 6px; margin-bottom: 6px; }
     .lista-editable .fila input { flex: 1; }
     .dos-columnas { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
     @media (max-width: 560px) { .dos-columnas { grid-template-columns: 1fr; } }
-    .interruptor { display: flex; gap: 8px; align-items: center; font-weight: 600; margin-bottom: 14px; }
-    .herramientas { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+    .interruptor { display: flex; gap: 9px; align-items: center; font-weight: 600; margin-bottom: 16px; font-size: 14px; }
+    .herramientas { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
     .herramientas .entrada { width: auto; }
     .herramientas .grupo { display: flex; gap: 4px; align-items: center; }
     .tabla-precios { max-height: 46vh; overflow-y: auto; border: 1px solid var(--borde); border-radius: 10px; }
-    .tabla-precios th { position: sticky; top: 0; z-index: 1; }
-    .tabla-precios td { padding: 7px 10px; }
-    .tabla-precios input[type="number"] { width: 110px; text-align: right; padding: 7px 9px; }
+    .tabla-precios td { padding: 7px 12px; }
+    .tabla-precios input[type="number"] { width: 112px; text-align: right; padding: 6px 9px; }
     .tabla-precios tr.sin-marcar td { color: var(--tenue); }
     .contador { font-size: 13px; color: var(--tenue); margin-top: 8px; }
-    .error-paso { color: var(--peligro); font-size: 14px; margin-top: 10px; }
+    .error-paso { color: var(--peligro); font-size: 14px; margin-top: 10px; display: flex; gap: 6px; align-items: center; }
+    .error-paso:empty { display: none; }
     .listo { text-align: center; padding: 10px 0; }
-    .listo .exito-icono { width: 56px; height: 56px; border-radius: 50%; background: var(--resalte-suave); color: var(--resalte); font-size: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-    .listo p { color: var(--tenue); margin-bottom: 14px; }
+    .listo .exito-icono { width: 60px; height: 60px; border-radius: 50%; background: var(--exito-suave); color: var(--exito); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+    .listo .exito-icono .ico { width: 30px; height: 30px; stroke-width: 2.5; }
+    .listo h3 { font-size: 18px; }
+    .listo p { color: var(--tenue); margin: 4px 0 16px; }
     .listo .link-caja { text-align: left; margin-bottom: 12px; }
+
+    /* Ajustes */
+    .ajustes-rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+    @media (max-width: 980px) { .ajustes-rejilla { grid-template-columns: 1fr; } }
+    .colores { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .colores button { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--superficie); box-shadow: 0 0 0 1px var(--borde-fuerte); }
+    .colores button.activo { box-shadow: 0 0 0 2px var(--texto); }
+    .colores input[type="color"] { width: 38px; height: 32px; border: 1px solid var(--borde-fuerte); border-radius: 8px; background: var(--superficie); padding: 2px; }
+    .logo-editor { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+    .logo-editor .marca-logo { width: 64px; height: 64px; border-radius: 14px; border: 1px solid var(--borde); background: var(--superficie-2); }
+    .logo-editor .monograma { font-size: 20px; }
+    .vista-marca { border: 1px dashed var(--borde-fuerte); border-radius: var(--radio); padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .barra-guardar { position: sticky; bottom: 0; margin-top: 16px; padding: 12px 0; display: flex; justify-content: flex-end; background: linear-gradient(transparent, var(--fondo) 35%); }
+    @media (max-width: 860px) { .barra-guardar { bottom: 64px; } }
 
     .compras-titulo { display: none; }
     @media print {
-      .lateral, .encabezado .btn, .filtros { display: none !important; }
+      .lateral, .encabezado .acciones, .filtros, .menu { display: none !important; }
       .principal { margin: 0; padding: 0; }
       .compras-titulo { display: block; font-size: 18px; margin-bottom: 10px; }
+      .tabla-caja { box-shadow: none; }
     }
   </style>
 </head>
@@ -126,10 +214,11 @@
   <!-- Acceso -->
   <div id="pantallaAcceso">
     <form class="acceso" id="formAcceso">
-      <div class="negocio" id="accesoNegocio">PROVEEDOR</div>
-      <h1>Administración</h1>
-      <label class="campo"><span>Correo</span><input type="email" id="correo" autocomplete="username" required /></label>
-      <label class="campo"><span>Contraseña</span><input type="password" id="contrasena" autocomplete="current-password" required /></label>
+      <div class="marca"><div class="marca-logo" data-marca-logo><span class="monograma">PR</span></div><div class="marca-nombre" id="accesoNegocio">PROVEEDOR</div></div>
+      <h1>Bienvenido de vuelta</h1>
+      <p class="sub">Entra al panel para administrar pedidos, clientes y precios.</p>
+      <label class="campo"><span>Correo</span><input type="email" id="correo" autocomplete="username" placeholder="tu@correo.com" required /></label>
+      <label class="campo"><span>Contraseña</span><input type="password" id="contrasena" autocomplete="current-password" placeholder="••••••••" required /></label>
       <button class="btn primario" type="submit" id="btnEntrar">Entrar</button>
       <div class="acceso-error" id="accesoError"></div>
       <div class="acceso-nota" id="accesoNota"></div>
@@ -139,16 +228,28 @@
   <!-- Panel -->
   <div id="pantallaPanel">
     <aside class="lateral">
-      <div class="negocio" id="panelNegocio">PROVEEDOR</div>
+      <div class="marca"><div class="marca-logo" data-marca-logo></div><div class="marca-nombre" data-marca-nombre id="panelNegocio">PROVEEDOR</div></div>
+      <div class="menu-titulo">Menú</div>
       <nav class="menu" id="menu">
-        <button data-vista="inicio" class="activo">Inicio</button>
-        <button data-vista="pedidos">Pedidos</button>
-        <button data-vista="compras">Por comprar</button>
-        <button data-vista="clientes">Clientes</button>
-        <button data-vista="catalogo">Catálogo</button>
-        <button data-vista="ajustes">Ajustes</button>
+        <button data-vista="inicio" class="activo"><svg class="ico" aria-hidden="true"><use href="iconos.svg#inicio"/></svg><span>Inicio</span></button>
+        <button data-vista="pedidos"><svg class="ico" aria-hidden="true"><use href="iconos.svg#pedidos"/></svg><span>Pedidos</span><span class="insignia" id="insigniaPedidos" hidden></span></button>
+        <button data-vista="compras"><svg class="ico" aria-hidden="true"><use href="iconos.svg#carrito"/></svg><span>Por comprar</span></button>
+        <button data-vista="clientes"><svg class="ico" aria-hidden="true"><use href="iconos.svg#usuarios"/></svg><span>Clientes</span></button>
+        <button data-vista="catalogo"><svg class="ico" aria-hidden="true"><use href="iconos.svg#paquete"/></svg><span>Catálogo</span></button>
+        <button data-vista="ajustes"><svg class="ico" aria-hidden="true"><use href="iconos.svg#ajustes"/></svg><span>Ajustes</span></button>
       </nav>
-      <button class="btn chico" id="btnSalir">Cerrar sesión</button>
+      <div class="lateral-pie">
+        <div class="segmentos" id="selectorTema" role="group" aria-label="Tema">
+          <button type="button" data-tema="claro" title="Claro"><svg class="ico chico" aria-hidden="true"><use href="iconos.svg#sol"/></svg><span>Claro</span></button>
+          <button type="button" data-tema="sistema" title="Como el sistema"><svg class="ico chico" aria-hidden="true"><use href="iconos.svg#pantalla"/></svg><span>Auto</span></button>
+          <button type="button" data-tema="oscuro" title="Oscuro"><svg class="ico chico" aria-hidden="true"><use href="iconos.svg#luna"/></svg><span>Oscuro</span></button>
+        </div>
+        <div class="usuario">
+          <div class="avatar" id="usuarioAvatar"></div>
+          <div class="usuario-datos"><div id="usuarioCorreo"></div><small>Administrador</small></div>
+          <button class="btn fantasma solo-icono" id="btnSalir" title="Cerrar sesión" aria-label="Cerrar sesión"><svg class="ico" aria-hidden="true"><use href="iconos.svg#salir"/></svg></button>
+        </div>
+      </div>
     </aside>
 
     <main class="principal">
@@ -157,20 +258,51 @@
       <section class="vista activa" id="vista-inicio">
         <div class="encabezado">
           <div><h1>Inicio</h1><p id="inicioFecha"></p></div>
-          <button class="btn" id="btnRecargarInicio">Actualizar</button>
+          <div class="acciones">
+            <div class="segmentos" id="rangoInicio" role="group" aria-label="Periodo">
+              <button type="button" data-dias="7">7 días</button>
+              <button type="button" data-dias="30" class="activo">30 días</button>
+              <button type="button" data-dias="90">90 días</button>
+            </div>
+            <button class="btn solo-icono" id="btnRecargarInicio" title="Actualizar" aria-label="Actualizar"><svg class="ico" aria-hidden="true"><use href="iconos.svg#actualizar"/></svg></button>
+          </div>
         </div>
         <div class="metricas" id="metricas"></div>
-        <div class="dos-bloques">
-          <div class="bloque"><h2>Clientes que no han pedido</h2><div id="listaInactivos"></div></div>
-          <div class="bloque"><h2>Alertas</h2><div id="listaAlertas"></div></div>
+        <div class="rejilla-inicio">
+          <div class="tarjeta ancho-completo">
+            <div class="tarjeta-titulo">
+              <div><h2>Ventas por día de entrega</h2><p id="graficaSub">Sin pedidos cancelados</p></div>
+              <div class="grafica-total" id="graficaTotal"></div>
+            </div>
+            <div class="tarjeta-cuerpo"><div class="grafica-caja" id="graficaCaja"><canvas id="graficaVentas" role="img" aria-label="Ventas por día"></canvas></div></div>
+          </div>
+          <div class="tarjeta">
+            <div class="tarjeta-titulo"><div><h2>Mejores clientes</h2><p>Por importe en el periodo</p></div></div>
+            <div class="tarjeta-cuerpo" id="topClientes"></div>
+          </div>
+          <div class="tarjeta">
+            <div class="tarjeta-titulo"><div><h2>Productos más vendidos</h2><p>Por importe en el periodo</p></div></div>
+            <div class="tarjeta-cuerpo" id="topProductos"></div>
+          </div>
+          <div class="tarjeta">
+            <div class="tarjeta-titulo"><div><h2>Clientes que no han pedido</h2><p id="inactivosSub"></p></div></div>
+            <div id="listaInactivos"></div>
+          </div>
+          <div class="tarjeta">
+            <div class="tarjeta-titulo"><div><h2>Alertas</h2><p>Precios y margen</p></div></div>
+            <div id="listaAlertas"></div>
+          </div>
         </div>
       </section>
 
       <!-- Pedidos -->
       <section class="vista" id="vista-pedidos">
         <div class="encabezado">
-          <div><h1>Pedidos</h1><p>Confirma los pedidos y actualiza su estado.</p></div>
-          <button class="btn" id="btnRecargarPedidos">Actualizar</button>
+          <div><h1>Pedidos</h1><p>Confirma los pedidos, actualiza su estado e imprime remisiones.</p></div>
+          <div class="acciones">
+            <button class="btn" id="btnRemisionesDia"><svg class="ico" aria-hidden="true"><use href="iconos.svg#imprimir"/></svg>Remisiones del día</button>
+            <button class="btn solo-icono" id="btnRecargarPedidos" title="Actualizar" aria-label="Actualizar"><svg class="ico" aria-hidden="true"><use href="iconos.svg#actualizar"/></svg></button>
+          </div>
         </div>
         <div class="filtros">
           <select class="entrada" id="filtroPeriodo">
@@ -196,7 +328,10 @@
       <section class="vista" id="vista-compras">
         <div class="encabezado">
           <div><h1>Por comprar</h1><p>Suma de todos los pedidos de un día de entrega (sin cancelados).</p></div>
-          <button class="btn" onclick="window.print()">Imprimir</button>
+          <div class="acciones">
+            <button class="btn" id="btnRemisionesCompras"><svg class="ico" aria-hidden="true"><use href="iconos.svg#documento"/></svg>Remisiones</button>
+            <button class="btn" onclick="window.print()"><svg class="ico" aria-hidden="true"><use href="iconos.svg#imprimir"/></svg>Imprimir lista</button>
+          </div>
         </div>
         <div class="filtros"><input type="date" class="entrada" id="comprasDia" /></div>
         <div class="compras-titulo" id="comprasTitulo"></div>
@@ -207,7 +342,12 @@
       <section class="vista" id="vista-clientes">
         <div class="encabezado">
           <div><h1>Clientes</h1><p>Cada cliente pide desde su propio link, con sus productos y precios.</p></div>
-          <button class="btn primario" id="btnNuevoCliente">+ Nuevo cliente</button>
+          <div class="acciones">
+            <button class="btn primario" id="btnNuevoCliente"><svg class="ico" aria-hidden="true"><use href="iconos.svg#mas"/></svg>Nuevo cliente</button>
+          </div>
+        </div>
+        <div class="filtros">
+          <label class="buscador"><svg class="ico" aria-hidden="true"><use href="iconos.svg#buscar"/></svg><input class="entrada" id="buscarCliente" placeholder="Buscar cliente…" aria-label="Buscar cliente" /></label>
         </div>
         <div id="listaClientes"></div>
       </section>
@@ -216,39 +356,97 @@
       <section class="vista" id="vista-catalogo">
         <div class="encabezado">
           <div><h1>Catálogo general</h1><p>Todos tus productos. El precio base se propone al asignarlos a un cliente.</p></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn" id="btnImportar">Pegar desde Excel</button>
-            <button class="btn primario" id="btnNuevoProducto">+ Nuevo producto</button>
+          <div class="acciones">
+            <button class="btn" id="btnImportar"><svg class="ico" aria-hidden="true"><use href="iconos.svg#tabla"/></svg>Pegar desde Excel</button>
+            <button class="btn primario" id="btnNuevoProducto"><svg class="ico" aria-hidden="true"><use href="iconos.svg#mas"/></svg>Nuevo producto</button>
           </div>
         </div>
-        <div class="filtros"><input class="entrada" id="buscarProducto" placeholder="Buscar producto…" /></div>
+        <div class="filtros">
+          <label class="buscador"><svg class="ico" aria-hidden="true"><use href="iconos.svg#buscar"/></svg><input class="entrada" id="buscarProducto" placeholder="Buscar producto…" aria-label="Buscar producto" /></label>
+          <select class="entrada" id="filtroCategoria"><option value="">Todas las categorías</option></select>
+        </div>
         <div id="listaProductos"></div>
       </section>
 
       <!-- Ajustes -->
       <section class="vista" id="vista-ajustes">
-        <div class="encabezado"><div><h1>Ajustes</h1><p>Datos que ven tus clientes y reglas del negocio.</p></div></div>
-        <form id="formAjustes" style="max-width:480px">
-          <label class="campo"><span>Nombre del negocio</span><input id="ajNombre" maxlength="60" required /></label>
-          <label class="campo"><span>WhatsApp para recibir avisos de pedido</span>
-            <input id="ajWhatsapp" inputmode="numeric" placeholder="5215512345678" />
-            <small>Solo números, con 52 y 1 al inicio para celulares de México. Déjalo vacío si no quieres usarlo.</small>
-          </label>
-          <label class="campo"><span>Hora de corte</span>
-            <input id="ajCorte" type="time" />
-            <small>Los pedidos hechos después de esta hora se entregan un día después. Vacío = siempre se puede pedir para mañana.</small>
-          </label>
-          <div class="dos-columnas">
-            <label class="campo"><span>Margen mínimo (%)</span>
-              <input id="ajMargen" type="number" min="0" max="100" step="0.5" placeholder="Ej. 15" />
-              <small>Te avisa si un precio deja menos margen.</small>
-            </label>
-            <label class="campo"><span>Días sin pedir para avisarte</span>
-              <input id="ajInactividad" type="number" min="1" max="365" step="1" required />
-              <small>Para la lista de Inicio.</small>
-            </label>
+        <div class="encabezado"><div><h1>Ajustes</h1><p>Datos de tu negocio, tu marca y reglas.</p></div></div>
+        <form id="formAjustes">
+          <div class="ajustes-rejilla">
+            <div class="tarjeta">
+              <div class="tarjeta-titulo"><div><h2>Negocio</h2><p>Lo que ven tus clientes al pedir.</p></div></div>
+              <div class="tarjeta-cuerpo">
+                <label class="campo"><span>Nombre del negocio</span><input id="ajNombre" maxlength="60" required /></label>
+                <label class="campo"><span>WhatsApp para recibir avisos de pedido</span>
+                  <input id="ajWhatsapp" inputmode="numeric" placeholder="5215512345678" />
+                  <small>Solo números, con 52 y 1 al inicio para celulares de México. Déjalo vacío si no quieres usarlo.</small>
+                </label>
+                <label class="campo" style="margin-bottom:0"><span>Hora de corte</span>
+                  <input id="ajCorte" type="time" />
+                  <small>Los pedidos hechos después de esta hora se entregan un día después. Vacío = siempre se puede pedir para mañana.</small>
+                </label>
+              </div>
+            </div>
+
+            <div class="tarjeta">
+              <div class="tarjeta-titulo"><div><h2>Marca</h2><p>Logo y color del panel, de la pantalla del cliente y de las remisiones.</p></div></div>
+              <div class="tarjeta-cuerpo">
+                <div class="logo-editor">
+                  <div class="marca-logo" id="ajLogoVista"></div>
+                  <div class="acciones">
+                    <label class="btn chico"><svg class="ico" aria-hidden="true"><use href="iconos.svg#subir"/></svg>Subir logo<input type="file" id="ajLogoArchivo" accept="image/png,image/jpeg,image/webp" hidden /></label>
+                    <button type="button" class="btn chico fantasma" id="btnQuitarLogo">Quitar</button>
+                  </div>
+                </div>
+                <div class="campo" style="margin-bottom:6px"><span>Color principal</span></div>
+                <div class="colores" id="colores">
+                  <button type="button" data-color="#0f766e" style="background:#0f766e" aria-label="Verde azulado"></button>
+                  <button type="button" data-color="#15803d" style="background:#15803d" aria-label="Verde"></button>
+                  <button type="button" data-color="#1d4ed8" style="background:#1d4ed8" aria-label="Azul"></button>
+                  <button type="button" data-color="#4338ca" style="background:#4338ca" aria-label="Índigo"></button>
+                  <button type="button" data-color="#7e22ce" style="background:#7e22ce" aria-label="Morado"></button>
+                  <button type="button" data-color="#be123c" style="background:#be123c" aria-label="Rojo"></button>
+                  <button type="button" data-color="#c2410c" style="background:#c2410c" aria-label="Naranja"></button>
+                  <button type="button" data-color="#1e293b" style="background:#1e293b" aria-label="Grafito"></button>
+                  <input type="color" id="ajColor" aria-label="Otro color" />
+                </div>
+                <div class="vista-marca">
+                  <div class="marca"><div class="marca-logo" data-marca-logo></div><div class="marca-nombre" data-marca-nombre>PROVEEDOR</div></div>
+                  <div class="acciones"><span class="etiqueta confirmado">Confirmado</span><button type="button" class="btn primario chico" tabindex="-1">Botón</button></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tarjeta">
+              <div class="tarjeta-titulo"><div><h2>Datos para remisión</h2><p>Aparecen en el encabezado de cada nota de entrega.</p></div></div>
+              <div class="tarjeta-cuerpo">
+                <label class="campo"><span>Razón social</span><input id="ajRazon" maxlength="120" placeholder="Opcional" /></label>
+                <div class="dos-columnas">
+                  <label class="campo"><span>RFC</span><input id="ajRfc" maxlength="13" placeholder="Opcional" style="text-transform:uppercase" /></label>
+                  <label class="campo"><span>Teléfono</span><input id="ajTelefono" maxlength="30" inputmode="tel" placeholder="Opcional" /></label>
+                </div>
+                <label class="campo"><span>Dirección</span><input id="ajDireccion" maxlength="200" placeholder="Opcional" /></label>
+                <label class="campo" style="margin-bottom:0"><span>Leyenda al pie</span><textarea id="ajLeyenda" rows="2" maxlength="300"></textarea></label>
+              </div>
+            </div>
+
+            <div class="tarjeta">
+              <div class="tarjeta-titulo"><div><h2>Reglas</h2><p>Alertas del tablero de Inicio.</p></div></div>
+              <div class="tarjeta-cuerpo">
+                <div class="dos-columnas">
+                  <label class="campo"><span>Margen mínimo (%)</span>
+                    <input id="ajMargen" type="number" min="0" max="100" step="0.5" placeholder="Ej. 15" />
+                    <small>Te avisa si un precio deja menos margen.</small>
+                  </label>
+                  <label class="campo"><span>Días sin pedir para avisarte</span>
+                    <input id="ajInactividad" type="number" min="1" max="365" step="1" required />
+                    <small>Para la lista de Inicio.</small>
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
-          <button class="btn primario" type="submit">Guardar ajustes</button>
+          <div class="barra-guardar"><button class="btn primario" type="submit" id="btnGuardarAjustes"><svg class="ico" aria-hidden="true"><use href="iconos.svg#check"/></svg>Guardar ajustes</button></div>
         </form>
       </section>
     </main>
@@ -267,7 +465,7 @@
 
       <div class="paso" data-paso="1">
         <label class="interruptor"><input type="checkbox" id="clActivo" checked /> Cliente activo (puede hacer pedidos)</label>
-        <label class="campo"><span>Nombre</span><input id="clNombre" maxlength="80" /></label>
+        <label class="campo"><span>Nombre</span><input id="clNombre" maxlength="80" placeholder="Ej. Café Centro" /></label>
         <div class="dos-columnas">
           <label class="campo"><span>Tipo</span>
             <select id="clTipo">
@@ -286,7 +484,7 @@
 
       <div class="paso" data-paso="2">
         <div class="herramientas">
-          <input class="entrada" id="ppBuscar" placeholder="Buscar producto…" />
+          <label class="buscador"><svg class="ico" aria-hidden="true"><use href="iconos.svg#buscar"/></svg><input class="entrada" id="ppBuscar" placeholder="Buscar producto…" aria-label="Buscar producto" /></label>
           <select class="entrada" id="ppCategoria"><option value="">Todas las categorías</option></select>
           <button type="button" class="btn chico" id="ppMarcar">Marcar visibles</button>
           <span class="grupo">
@@ -304,18 +502,18 @@
       <div class="paso" data-paso="3">
         <p style="color:var(--tenue);font-size:14px;margin-bottom:12px">Agrega sucursales solo si cada una pide y recibe por separado. Todas usan los mismos precios.</p>
         <div class="lista-editable" id="clSucursales"></div>
-        <button type="button" class="btn chico" id="btnAgregarSucursal">+ Agregar sucursal</button>
+        <button type="button" class="btn chico" id="btnAgregarSucursal"><svg class="ico" aria-hidden="true"><use href="iconos.svg#mas"/></svg>Agregar sucursal</button>
       </div>
 
       <div class="paso" data-paso="4">
         <div class="listo">
-          <div class="exito-icono">✓</div>
+          <div class="exito-icono"><svg class="ico" aria-hidden="true"><use href="iconos.svg#check"/></svg></div>
           <h3 id="listoTitulo"></h3>
           <p id="listoTexto"></p>
-          <div class="link-caja"><code id="listoLink"></code><button type="button" class="btn chico" id="listoCopiar">Copiar link</button></div>
+          <div class="link-caja"><svg class="ico" aria-hidden="true"><use href="iconos.svg#enlace"/></svg><code id="listoLink"></code><button type="button" class="btn chico" id="listoCopiar">Copiar link</button></div>
           <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-            <button type="button" class="btn" id="listoWhatsApp">Enviar por WhatsApp</button>
-            <button type="button" class="btn peligro" id="btnNuevoLink">Generar link nuevo</button>
+            <button type="button" class="btn" id="listoWhatsApp"><svg class="ico" aria-hidden="true"><use href="iconos.svg#mensaje"/></svg>Enviar por WhatsApp</button>
+            <button type="button" class="btn peligro" id="btnNuevoLink"><svg class="ico" aria-hidden="true"><use href="iconos.svg#actualizar"/></svg>Generar link nuevo</button>
           </div>
         </div>
       </div>
@@ -324,7 +522,7 @@
       <div class="modal-acciones">
         <button type="button" class="btn" id="btnAtras">Atrás</button>
         <span style="flex:1"></span>
-        <button type="button" class="btn" id="btnCancelarCliente">Cancelar</button>
+        <button type="button" class="btn fantasma" id="btnCancelarCliente">Cancelar</button>
         <button type="button" class="btn" id="btnSiguiente">Siguiente</button>
         <button type="submit" class="btn primario" id="btnGuardarCliente">Guardar</button>
       </div>
@@ -354,7 +552,7 @@
       <div class="contador" id="prMargen"></div>
       <datalist id="categorias"></datalist>
       <div class="modal-acciones">
-        <button type="button" class="btn" data-cerrar="modalProducto">Cancelar</button>
+        <button type="button" class="btn fantasma" data-cerrar="modalProducto">Cancelar</button>
         <button type="submit" class="btn primario">Guardar</button>
       </div>
     </form>
@@ -372,7 +570,7 @@
       <textarea class="entrada" id="textoImportar" rows="10" placeholder="Frijol negro&#9;Granos&#9;Costal 25 kg&#9;costal&#9;520&#9;430"></textarea>
       <div id="vistaImportar" style="font-size:14px;color:var(--tenue);margin-top:8px"></div>
       <div class="modal-acciones">
-        <button type="button" class="btn" data-cerrar="modalImportar">Cancelar</button>
+        <button type="button" class="btn fantasma" data-cerrar="modalImportar">Cancelar</button>
         <button type="submit" class="btn primario" id="btnConfirmarImportar" disabled>Agregar productos</button>
       </div>
     </form>
@@ -381,6 +579,7 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.js"></script>
   <script src="config.js"></script>
   <script src="comun.js"></script>
   <script>
@@ -392,6 +591,9 @@
     let clientes = [];
     let editandoProducto = null;
     let importables = [];
+    let diasInicio = 30;
+    let estadisticas = null;
+    let grafica = null;
 
     const urlCliente = (token) => new URL(`index.html?c=${token}`, location.href).href;
     const numero = (v) => {
@@ -400,11 +602,28 @@
     };
     const textoMargen = (m) => (m === null ? '—' : `${m.toFixed(1)} %`);
     const esMargenBajo = (m) => m !== null && ajustes.margen_minimo !== null && m < Number(ajustes.margen_minimo);
+    const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 
     function abrirWhatsApp(telefono, texto) {
       const tel = (telefono || '').replace(/\D/g, '');
       window.open(`https://wa.me/${tel.length === 10 ? '521' + tel : tel}?text=${encodeURIComponent(texto)}`, '_blank');
     }
+
+    // ─────────── Tema ───────────
+    function marcarTema() {
+      const modo = temaGuardado();
+      document.querySelectorAll('#selectorTema button').forEach((b) => b.classList.toggle('activo', b.dataset.tema === modo));
+    }
+    $('selectorTema').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-tema]');
+      if (!b) return;
+      aplicarTema(b.dataset.tema);
+      marcarTema();
+      dibujarGrafica();
+    });
+    window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', () => dibujarGrafica());
+    marcarTema();
+    aplicarMarca({ nombre: 'PROVEEDOR' });
 
     // ─────────── Acceso ───────────
     async function revisarSesion() {
@@ -435,6 +654,9 @@
         await db.auth.signOut();
         return;
       }
+      const correo = sesion.user.email || '';
+      $('usuarioCorreo').textContent = correo;
+      $('usuarioAvatar').textContent = iniciales(correo.split('@')[0].replace(/[._-]+/g, ' '));
       $('pantallaAcceso').style.display = 'none';
       $('pantallaPanel').style.display = 'block';
       await cargarAjustes();
@@ -449,6 +671,8 @@
     function irA(vista) {
       document.querySelectorAll('#menu button').forEach((x) => x.classList.toggle('activo', x.dataset.vista === vista));
       document.querySelectorAll('.vista').forEach((v) => v.classList.toggle('activa', v.id === `vista-${vista}`));
+      window.scrollTo({ top: 0 });
+      if (vista !== 'ajustes') aplicarMarca(marcaGuardada());   // descarta la vista previa sin guardar
       if (vista === 'inicio') cargarInicio();
       if (vista === 'pedidos') cargarPedidos();
       if (vista === 'compras') cargarCompras();
@@ -458,16 +682,46 @@
       if (b) irA(b.dataset.vista);
     });
     document.querySelectorAll('[data-cerrar]').forEach((b) => (b.onclick = () => $(b.dataset.cerrar).classList.remove('visible')));
+    document.querySelectorAll('.modal-fondo').forEach((f) => f.addEventListener('mousedown', (e) => {
+      if (e.target === f) f.classList.remove('visible');
+    }));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') document.querySelectorAll('.modal-fondo.visible').forEach((f) => f.classList.remove('visible'));
+    });
+
+    function actualizarInsignia(n) {
+      $('insigniaPedidos').hidden = !n;
+      $('insigniaPedidos').textContent = n > 99 ? '99+' : n;
+    }
+    async function contarPorConfirmar() {
+      const { data } = await db.from('pedidos').select('id').eq('estado', 'recibido').gte('fecha_entrega', hoyMX());
+      if (data) actualizarInsignia(data.length);
+    }
 
     // ─────────── Inicio ───────────
     $('btnRecargarInicio').onclick = cargarInicio;
+    $('rangoInicio').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-dias]');
+      if (!b) return;
+      diasInicio = Number(b.dataset.dias);
+      $('rangoInicio').querySelectorAll('button').forEach((x) => x.classList.toggle('activo', x === b));
+      cargarEstadisticas();
+    });
+
+    function htmlDelta(v, etiqueta = 'vs. periodo anterior') {
+      if (v === null) return `<span class="sutil">Sin datos del periodo anterior</span>`;
+      const clase = Math.abs(v) < 0.5 ? 'igual' : v > 0 ? 'sube' : 'baja';
+      const flecha = clase === 'sube' ? '▲' : clase === 'baja' ? '▼' : '';
+      return `<span class="delta ${clase}">${flecha} ${esc(Math.abs(v).toFixed(0))} %</span><span>${esc(etiqueta)}</span>`;
+    }
 
     async function cargarInicio() {
       const hoy = hoyMX();
       const manana = sumarDias(hoy, 1);
-      const enSiete = sumarDias(hoy, 7);
-      $('inicioFecha').textContent = `Hoy es ${fechaLarga(hoy).toLowerCase()}.`;
-      $('metricas').innerHTML = '<div class="vacio">Cargando…</div>';
+      $('inicioFecha').textContent = `${fechaLarga(hoy, true)}.`;
+      if (!$('metricas').children.length || $('metricas').querySelector('.esqueleto')) {
+        $('metricas').innerHTML = Array.from({ length: 4 }, () => '<div class="esqueleto" style="height:118px;border-radius:12px"></div>').join('');
+      }
 
       const [rPedidos, rResumen, rAsignados] = await Promise.all([
         db.from('pedidos').select('id, fecha_entrega, estado, pedido_lineas(importe)').gte('fecha_entrega', hoy).neq('estado', 'cancelado'),
@@ -477,23 +731,23 @@
           : Promise.resolve({ data: [] }),
       ]);
       if (rPedidos.error || rResumen.error) {
-        $('metricas').innerHTML = `<div class="vacio">${esc(mensajeError(rPedidos.error || rResumen.error))}</div>`;
+        $('metricas').innerHTML = estadoVacio('alerta', 'No se pudo cargar', mensajeError(rPedidos.error || rResumen.error));
         return;
       }
 
       const total = (ps) => ps.reduce((a, p) => a + p.pedido_lineas.reduce((b, l) => b + Number(l.importe || 0), 0), 0);
       const porConfirmar = rPedidos.data.filter((p) => p.estado === 'recibido');
       const deManana = rPedidos.data.filter((p) => p.fecha_entrega === manana);
-      const semana = rPedidos.data.filter((p) => p.fecha_entrega <= enSiete);
+      actualizarInsignia(porConfirmar.length);
 
       $('metricas').innerHTML = `
         <button class="metrica ${porConfirmar.length ? 'alerta' : ''}" id="mPorConfirmar">
-          <div class="rotulo">Por confirmar</div><div class="valor">${porConfirmar.length}</div>
-          <div class="detalle">${porConfirmar.length ? 'Toca para revisarlos' : 'Todo al día'}</div></button>
-        <div class="metrica"><div class="rotulo">Entregas de mañana</div><div class="valor">${deManana.length}</div>
+          <div class="rotulo">${icono('bandeja')}Por confirmar</div><div class="valor">${porConfirmar.length}</div>
+          <div class="detalle">${porConfirmar.length ? 'Toca para revisarlos →' : 'Todo al día'}</div></button>
+        <div class="metrica"><div class="rotulo">${icono('camion')}Entregas de mañana</div><div class="valor">${deManana.length}</div>
           <div class="detalle">${esc(dinero(total(deManana)))}</div></div>
-        <div class="metrica"><div class="rotulo">Por entregar en 7 días</div><div class="valor">${esc(dinero(total(semana)))}</div>
-          <div class="detalle">${semana.length} ${semana.length === 1 ? 'pedido' : 'pedidos'}</div></div>`;
+        <div class="metrica" id="mVentas"><div class="rotulo">${icono('dinero')}Ventas</div><div class="valor"><div class="esqueleto" style="height:30px;width:70%"></div></div><div class="detalle"></div></div>
+        <div class="metrica" id="mTicket"><div class="rotulo">${icono('recibo')}Ticket promedio</div><div class="valor"><div class="esqueleto" style="height:30px;width:60%"></div></div><div class="detalle"></div></div>`;
       $('mPorConfirmar').onclick = () => {
         $('filtroPeriodo').value = 'proximos';
         $('filtroDia').hidden = true;
@@ -501,37 +755,151 @@
         $('filtroEstado').value = 'recibido';
         irA('pedidos');
       };
+      cargarEstadisticas();
 
       // Clientes que no han pedido
       const dias = Number(ajustes.dias_inactividad) || 7;
+      $('inactivosSub').textContent = `Activos sin pedir en ${dias} días`;
       const limite = Date.now() - dias * 86400000;
       const inactivos = rResumen.data.filter((c) => c.activo && (!c.ultimo_pedido || new Date(c.ultimo_pedido).getTime() < limite));
       $('listaInactivos').innerHTML = inactivos.length
-        ? `<div class="lista">${inactivos.map((c) => `
+        ? inactivos.map((c) => `
             <div class="lista-fila">
-              <div>${esc(c.nombre)}<small>${c.ultimo_pedido
+              <div><span class="ico-caja">${icono('reloj')}</span><div>${esc(c.nombre)}<small>${c.ultimo_pedido
                 ? `Último pedido hace ${Math.floor((Date.now() - new Date(c.ultimo_pedido).getTime()) / 86400000)} días`
-                : 'Nunca ha pedido'}</small></div>
-              <button class="btn chico" data-recordar="${esc(c.id)}">Escribirle</button>
-            </div>`).join('')}</div>`
-        : `<div class="lista"><div class="lista-fila"><span>Todos tus clientes activos pidieron en los últimos ${dias} días.</span></div></div>`;
+                : 'Nunca ha pedido'}</small></div></div>
+              <button class="btn chico" data-recordar="${esc(c.id)}">${icono('mensaje')}Escribirle</button>
+            </div>`).join('')
+        : `<div class="lista-vacia">${icono('check-circulo')}Todos tus clientes activos pidieron en los últimos ${dias} días.</div>`;
 
       // Alertas
       const alertas = [];
       rResumen.data.filter((c) => c.activo && c.productos_sin_precio > 0).forEach((c) =>
-        alertas.push(`<div class="lista-fila"><div>${esc(c.nombre)}<small>${c.productos_sin_precio} ${c.productos_sin_precio === 1 ? 'producto' : 'productos'} sin precio: no los puede pedir</small></div>
+        alertas.push(`<div class="lista-fila"><div><span class="ico-caja peligro">${icono('etiqueta')}</span><div>${esc(c.nombre)}<small>${plural(c.productos_sin_precio, 'producto', 'productos')} sin precio: no los puede pedir</small></div></div>
           <button class="btn chico" data-editar-cliente="${esc(c.id)}">Corregir</button></div>`));
       rResumen.data.filter((c) => c.activo && c.productos === 0).forEach((c) =>
-        alertas.push(`<div class="lista-fila"><div>${esc(c.nombre)}<small>No tiene productos asignados</small></div>
+        alertas.push(`<div class="lista-fila"><div><span class="ico-caja aviso">${icono('paquete')}</span><div>${esc(c.nombre)}<small>No tiene productos asignados</small></div></div>
           <button class="btn chico" data-editar-cliente="${esc(c.id)}">Asignar</button></div>`));
       (rAsignados.data || []).forEach((a) => {
         const m = margen(a.precio, a.productos?.costo);
         if (esMargenBajo(m)) {
-          alertas.push(`<div class="lista-fila"><div>${esc(a.productos.nombre)} · ${esc(a.clientes?.nombre)}
-            <small class="margen-bajo">Margen ${esc(textoMargen(m))} (mínimo ${esc(ajustes.margen_minimo)} %)</small></div></div>`);
+          alertas.push(`<div class="lista-fila"><div><span class="ico-caja aviso">${icono('alerta')}</span><div>${esc(a.productos.nombre)} · ${esc(a.clientes?.nombre)}
+            <small class="margen-bajo">Margen ${esc(textoMargen(m))} (mínimo ${esc(ajustes.margen_minimo)} %)</small></div></div></div>`);
         }
       });
-      $('listaAlertas').innerHTML = `<div class="lista">${alertas.length ? alertas.join('') : '<div class="lista-fila"><span>Sin alertas.</span></div>'}</div>`;
+      $('listaAlertas').innerHTML = alertas.length ? alertas.join('') : `<div class="lista-vacia">${icono('check-circulo')}Sin alertas.</div>`;
+    }
+
+    async function cargarEstadisticas() {
+      const hasta = hoyMX();
+      const desde = sumarDias(hasta, -(diasInicio - 1));
+      $('graficaSub').textContent = `Últimos ${diasInicio} días · por fecha de entrega, sin cancelados`;
+      const { data, error } = await db.rpc('estadisticas_ventas', { p_desde: desde, p_hasta: hasta });
+      if (error || !data) {
+        estadisticas = null;
+        $('graficaCaja').innerHTML = `<div class="grafica-vacia">${esc(mensajeError(error))}</div>`;
+        return;
+      }
+      estadisticas = data;
+      const t = data.totales, ant = data.periodo_anterior;
+      const fijar = (id, valor, delta) => {
+        const el = $(id);
+        if (!el) return;
+        el.querySelector('.valor').textContent = valor;
+        el.querySelector('.detalle').innerHTML = delta;
+      };
+      fijar('mVentas', dinero(t.total), htmlDelta(variacion(t.total, ant.total)));
+      fijar('mTicket', dinero(t.ticket_promedio), `${esc(plural(Number(t.pedidos), 'pedido', 'pedidos'))} · ${htmlDelta(variacion(t.ticket_promedio, ant.ticket_promedio), '')}`);
+      $('graficaTotal').innerHTML = `<strong>${esc(dinero(t.total))}</strong><small>${esc(plural(Number(t.pedidos), 'pedido', 'pedidos'))}</small>`;
+      dibujarTop('topClientes', data.top_clientes, (x) => plural(Number(x.pedidos), 'pedido', 'pedidos'), 'usuarios', 'Aún no hay ventas en este periodo');
+      dibujarTop('topProductos', data.top_productos, (x) => plural(Number(x.cantidad), 'vendido', 'vendidos'), 'paquete', 'Aún no hay ventas en este periodo');
+      dibujarGrafica();
+    }
+
+    function dibujarTop(id, filas, detalle, ico, vacio) {
+      if (!filas.length) { $(id).innerHTML = estadoVacio(ico, vacio); return; }
+      const max = Math.max(...filas.map((f) => Number(f.total) || 0), 1);
+      $(id).innerHTML = `<div class="barras">${filas.map((f) => `
+        <div class="barra-fila">
+          <div class="nombre">${esc(f.nombre)}<small>${esc(detalle(f))}</small></div>
+          <div class="valor">${esc(dinero(f.total))}</div>
+          <div class="barra-pista"><div class="barra-relleno" style="width:${(Number(f.total) / max) * 100}%"></div></div>
+        </div>`).join('')}</div>`;
+    }
+
+    const compacto = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', notation: 'compact', maximumFractionDigits: 1 });
+
+    function dibujarGrafica() {
+      if (!estadisticas) return;
+      if (!$('graficaVentas')) $('graficaCaja').innerHTML = '<canvas id="graficaVentas" role="img"></canvas>';
+      if (!window.Chart) {
+        $('graficaCaja').innerHTML = '<div class="grafica-vacia">No se pudo cargar la gráfica. Revisa tu conexión.</div>';
+        return;
+      }
+      const estilo = getComputedStyle(document.documentElement);
+      const tok = (n) => estilo.getPropertyValue(n).trim();
+      const dias = estadisticas.por_dia;
+      const totales = dias.map((d) => Number(d.total) || 0);
+      const lienzo = $('graficaVentas');
+      lienzo.setAttribute('aria-label', `Ventas por día, últimos ${dias.length} días. Total ${dinero(estadisticas.totales.total)}.`);
+      if (grafica) grafica.destroy();
+      grafica = new Chart(lienzo, {
+        type: 'bar',
+        data: {
+          labels: dias.map((d) => d.fecha),
+          datasets: [{
+            data: totales,
+            backgroundColor: tok('--acento'),
+            hoverBackgroundColor: tok('--acento-tinta'),
+            borderRadius: 4,
+            borderSkipped: 'start',
+            maxBarThickness: 24,
+            categoryPercentage: 0.82,
+            barPercentage: 0.9,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 350 },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: tok('--superficie'), titleColor: tok('--texto'), bodyColor: tok('--texto-2'),
+              borderColor: tok('--borde-fuerte'), borderWidth: 1, padding: 10, cornerRadius: 8, displayColors: false,
+              titleFont: { family: 'Inter', weight: '600' }, bodyFont: { family: 'Inter' },
+              callbacks: {
+                title: (items) => fechaLarga(dias[items[0].dataIndex].fecha),
+                label: (item) => {
+                  const d = dias[item.dataIndex];
+                  return [`Ventas: ${dinero(d.total)}`, `Pedidos: ${d.pedidos}`];
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              border: { color: tok('--borde') },
+              ticks: {
+                color: tok('--tenue'), font: { family: 'Inter', size: 11 }, autoSkip: true, maxRotation: 0,
+                maxTicksLimit: dias.length > 31 ? 9 : 8,
+                callback: (_, i) => fechaCorta(dias[i].fecha).replace('.', ''),
+              },
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: tok('--borde'), drawTicks: false },
+              border: { display: false },
+              ticks: {
+                color: tok('--tenue'), font: { family: 'Inter', size: 11 }, padding: 8, maxTicksLimit: 5,
+                callback: (v) => (v >= 10000 ? compacto.format(v) : dinero(v).replace(/\.00$/, '')),
+              },
+            },
+          },
+        },
+      });
     }
 
     $('vista-inicio').addEventListener('click', (e) => {
@@ -552,8 +920,20 @@
     ['filtroDia', 'filtroCliente', 'filtroEstado'].forEach((id) => ($(id).onchange = cargarPedidos));
     $('btnRecargarPedidos').onclick = cargarPedidos;
 
+    const abrirRemisiones = (fecha) => window.open(`remision.html?fecha=${encodeURIComponent(fecha)}`, '_blank');
+    $('btnRemisionesDia').onclick = () =>
+      abrirRemisiones($('filtroPeriodo').value === 'dia' && $('filtroDia').value ? $('filtroDia').value : sumarDias(hoyMX(), 1));
+    $('btnRemisionesCompras').onclick = () => $('comprasDia').value && abrirRemisiones($('comprasDia').value);
+
+    function actualizarBotonRemisiones() {
+      const dia = $('filtroPeriodo').value === 'dia' && $('filtroDia').value ? $('filtroDia').value : sumarDias(hoyMX(), 1);
+      $('btnRemisionesDia').title = `Imprime las remisiones del ${fechaLarga(dia).toLowerCase()}`;
+      $('btnRemisionesDia').lastChild.textContent = dia === sumarDias(hoyMX(), 1) ? 'Remisiones de mañana' : `Remisiones del ${fechaCorta(dia).replace('.', '')}`;
+    }
+
     async function cargarPedidos() {
-      $('listaPedidos').innerHTML = '<div class="vacio">Cargando…</div>';
+      actualizarBotonRemisiones();
+      $('listaPedidos').innerHTML = `<div class="pedidos">${Array.from({ length: 3 }, () => '<div class="esqueleto" style="height:260px;border-radius:12px"></div>').join('')}</div>`;
       let q = db.from('pedidos')
         .select('id, folio, fecha_entrega, estado, notas, creado, clientes(nombre, direccion, horario_recepcion, instrucciones), pedido_lineas(sucursal_nombre, producto_nombre, presentacion, unidad, cantidad, precio_unitario, importe)')
         .limit(300);
@@ -565,8 +945,8 @@
       if ($('filtroEstado').value) q = q.eq('estado', $('filtroEstado').value);
 
       const { data, error } = await q;
-      if (error) { $('listaPedidos').innerHTML = `<div class="vacio">${esc(mensajeError(error))}</div>`; return; }
-      if (!data.length) { $('listaPedidos').innerHTML = '<div class="vacio">No hay pedidos con estos filtros.</div>'; return; }
+      if (error) { $('listaPedidos').innerHTML = estadoVacio('alerta', 'No se pudieron cargar los pedidos', mensajeError(error)); return; }
+      if (!data.length) { $('listaPedidos').innerHTML = estadoVacio('bandeja', 'No hay pedidos con estos filtros', 'Cuando tus clientes pidan desde su link, aparecerán aquí.'); return; }
 
       $('listaPedidos').innerHTML = `<div class="pedidos">${data.map((p) => {
         const porSuc = {};
@@ -578,26 +958,29 @@
         return `
           <article class="pedido ${esc(p.estado)}">
             <div class="pedido-cab">
-              <div>
+              <div style="min-width:0">
+                <div class="pedido-folio">#${esc(p.folio)}</div>
                 <div class="pedido-cliente">${esc(c.nombre || '—')}</div>
-                <div class="pedido-sub">#${esc(p.folio)} · Entrega ${esc(fechaCorta(p.fecha_entrega))}</div>
-                ${datosEntrega ? `<div class="pedido-sub">${esc(datosEntrega)}</div>` : ''}
+                <div class="pedido-sub">${icono('calendario')}Entrega ${esc(fechaCorta(p.fecha_entrega))}</div>
+                ${datosEntrega ? `<div class="pedido-sub">${icono('ubicacion')}<span>${esc(datosEntrega)}</span></div>` : ''}
               </div>
               <span class="etiqueta ${esc(p.estado)}">${esc(ESTADOS[p.estado])}</span>
             </div>
+            <div class="pedido-cuerpo">
             ${Object.entries(porSuc).map(([suc, ls]) => `
-              ${suc ? `<div class="pedido-suc">${esc(suc)}</div>` : '<div style="height:8px"></div>'}
+              ${suc ? `<div class="pedido-suc">${esc(suc)}</div>` : ''}
               ${ls.map((l) => `<div class="linea">
-                <span><strong>${esc(l.cantidad)}</strong> × ${esc(l.producto_nombre)} <small>${esc(textoPresentacion(l))}${l.precio_unitario != null ? ` · ${esc(dinero(l.precio_unitario))}` : ''}</small></span>
+                <span><span class="cant">${esc(l.cantidad)}</span>${esc(l.producto_nombre)} <small>${esc(textoPresentacion(l))}${l.precio_unitario != null ? ` · ${esc(dinero(l.precio_unitario))}` : ''}</small></span>
                 <span class="importe">${l.importe != null ? esc(dinero(l.importe)) : ''}</span></div>`).join('')}
             `).join('')}
+            </div>
             ${total ? `<div class="pedido-total"><span>Total</span><span>${esc(dinero(total))}</span></div>` : ''}
             ${p.notas ? `<div class="pedido-notas">${esc(p.notas)}</div>` : ''}
             <div class="pedido-pie">
-              <span class="pedido-sub">Recibido ${esc(new Date(p.creado).toLocaleString('es-MX', { timeZone: ZONA_HORARIA, dateStyle: 'short', timeStyle: 'short' }))}</span>
-              <select class="entrada" data-pedido="${esc(p.id)}">
+              <select class="entrada" data-pedido="${esc(p.id)}" aria-label="Estado del pedido">
                 ${Object.entries(ESTADOS).map(([v, t]) => `<option value="${v}" ${v === p.estado ? 'selected' : ''}>${t}</option>`).join('')}
               </select>
+              <a class="btn chico" href="remision.html?pedido=${encodeURIComponent(p.id)}" target="_blank" rel="noopener" data-remision="${esc(p.id)}">${icono('documento')}Remisión</a>
             </div>
           </article>`;
       }).join('')}</div>`;
@@ -611,6 +994,7 @@
       if (error) mostrarToast(mensajeError(error), 'error');
       else mostrarToast(`Pedido: ${ESTADOS[sel.value]}`);
       cargarPedidos();
+      contarPorConfirmar();
     });
 
     // ─────────── Por comprar ───────────
@@ -620,13 +1004,13 @@
       const dia = $('comprasDia').value;
       if (!dia) return;
       $('comprasTitulo').textContent = `Por comprar · entregas del ${fechaLarga(dia, true)}`;
-      $('listaCompras').innerHTML = '<div class="vacio">Cargando…</div>';
+      $('listaCompras').innerHTML = `<div class="tabla-caja tarjeta-cuerpo">${esqueleto(5, 20)}</div>`;
       const { data, error } = await db.from('pedido_lineas')
         .select('producto_nombre, presentacion, unidad, cantidad, sucursal_nombre, pedidos!inner(fecha_entrega, estado, clientes(nombre))')
         .eq('pedidos.fecha_entrega', dia)
         .neq('pedidos.estado', 'cancelado');
-      if (error) { $('listaCompras').innerHTML = `<div class="vacio">${esc(mensajeError(error))}</div>`; return; }
-      if (!data.length) { $('listaCompras').innerHTML = '<div class="vacio">No hay pedidos para ese día.</div>'; return; }
+      if (error) { $('listaCompras').innerHTML = estadoVacio('alerta', 'No se pudo cargar', mensajeError(error)); return; }
+      if (!data.length) { $('listaCompras').innerHTML = estadoVacio('carrito', 'No hay pedidos para ese día', 'Elige otra fecha de entrega.'); return; }
 
       const totales = {};
       data.forEach((l) => {
@@ -638,11 +1022,11 @@
       });
       const filas = Object.values(totales).sort((a, b) => a.producto_nombre.localeCompare(b.producto_nombre));
       $('listaCompras').innerHTML = `
-        <div class="tabla-caja"><table>
+        <div class="tabla-caja"><table class="tabla-responsiva">
           <thead><tr><th>Producto</th><th>Presentación</th><th class="num">Total</th><th>Quién lo pidió</th></tr></thead>
           <tbody>${filas.map((t) => `
-            <tr><td>${esc(t.producto_nombre)}</td><td>${esc(textoPresentacion(t))}</td>
-            <td class="num">${esc(t.total)}</td><td><small>${t.detalle.map(esc).join('<br>')}</small></td></tr>`).join('')}
+            <tr><td data-etiqueta=""><strong>${esc(t.producto_nombre)}</strong></td><td data-etiqueta="Presentación">${esc(textoPresentacion(t))}</td>
+            <td class="num" data-etiqueta="Total">${esc(t.total)}</td><td data-etiqueta="Pedido por"><small>${t.detalle.map(esc).join('<br>')}</small></td></tr>`).join('')}
           </tbody></table></div>`;
     }
 
@@ -651,32 +1035,46 @@
       const { data, error } = await db.from('productos').select('*').order('categoria').order('nombre');
       if (error) { mostrarToast(mensajeError(error), 'error'); return; }
       productos = data;
-      $('categorias').innerHTML = [...new Set(productos.map((p) => p.categoria))].map((c) => `<option value="${esc(c)}">`).join('');
+      const cats = [...new Set(productos.map((p) => p.categoria))];
+      $('categorias').innerHTML = cats.map((c) => `<option value="${esc(c)}">`).join('');
+      const actual = $('filtroCategoria').value;
+      $('filtroCategoria').innerHTML = '<option value="">Todas las categorías</option>' + cats.map((c) => `<option>${esc(c)}</option>`).join('');
+      $('filtroCategoria').value = cats.includes(actual) ? actual : '';
       dibujarProductos();
     }
 
     function dibujarProductos() {
       const filtro = $('buscarProducto').value.trim().toLowerCase();
-      const lista = productos.filter((p) => !filtro || `${p.nombre} ${p.categoria} ${p.presentacion}`.toLowerCase().includes(filtro));
-      if (!productos.length) { $('listaProductos').innerHTML = '<div class="vacio">Aún no hay productos. Agrega uno o pégalos desde Excel.</div>'; return; }
+      const cat = $('filtroCategoria').value;
+      const lista = productos
+        .filter((p) => !cat || p.categoria === cat)
+        .filter((p) => !filtro || `${p.nombre} ${p.categoria} ${p.presentacion}`.toLowerCase().includes(filtro));
+      if (!productos.length) {
+        $('listaProductos').innerHTML = estadoVacio('paquete', 'Aún no hay productos', 'Agrega tu primer producto o pégalos todos desde Excel.',
+          `<button class="btn primario" onclick="abrirProducto(null)">${icono('mas')}Nuevo producto</button>`);
+        return;
+      }
+      if (!lista.length) { $('listaProductos').innerHTML = estadoVacio('buscar', 'Ningún producto coincide', 'Prueba con otra búsqueda.'); return; }
       $('listaProductos').innerHTML = `
-        <div class="tabla-caja"><table>
-          <thead><tr><th>Producto</th><th>Categoría</th><th>Presentación</th><th class="num">Precio base</th><th class="num">Costo</th><th class="num">Margen</th><th>Estado</th><th></th></tr></thead>
+        <div class="tabla-caja"><table class="tabla-responsiva">
+          <thead><tr><th>Producto</th><th>Categoría</th><th class="num">Precio base</th><th class="num">Costo</th><th class="num">Margen</th><th>Estado</th><th></th></tr></thead>
           <tbody>${lista.map((p) => {
             const m = margen(p.precio_base, p.costo);
             return `
             <tr class="${p.activo ? '' : 'inactivo'}">
-              <td><strong>${esc(p.nombre)}</strong></td><td>${esc(p.categoria)}</td><td>${esc(textoPresentacion(p))}</td>
-              <td class="num">${Number(p.precio_base) ? esc(dinero(p.precio_base)) : '<small>Sin precio</small>'}</td>
-              <td class="num">${p.costo != null ? esc(dinero(p.costo)) : '—'}</td>
-              <td class="num ${esMargenBajo(m) ? 'margen-bajo' : ''}">${esc(textoMargen(m))}</td>
-              <td>${p.activo ? '<span class="etiqueta entregado">Activo</span>' : '<span class="etiqueta">Inactivo</span>'}</td>
-              <td><button class="btn chico" data-editar-producto="${esc(p.id)}">Editar</button></td>
+              <td data-etiqueta="" class="producto-nombre"><strong>${esc(p.nombre)}</strong><br><small>${esc(textoPresentacion(p))}</small></td>
+              <td data-etiqueta="Categoría"><span class="chip-cat">${esc(p.categoria)}</span></td>
+              <td class="num" data-etiqueta="Precio base">${Number(p.precio_base) ? esc(dinero(p.precio_base)) : '<small class="margen-bajo">Sin precio</small>'}</td>
+              <td class="num" data-etiqueta="Costo">${p.costo != null ? esc(dinero(p.costo)) : '—'}</td>
+              <td class="num ${esMargenBajo(m) ? 'margen-bajo' : ''}" data-etiqueta="Margen">${esc(textoMargen(m))}</td>
+              <td data-etiqueta="Estado">${p.activo ? '<span class="etiqueta entregado">Activo</span>' : '<span class="etiqueta">Inactivo</span>'}</td>
+              <td data-etiqueta="" class="num"><button class="btn chico" data-editar-producto="${esc(p.id)}">${icono('editar')}Editar</button></td>
             </tr>`;
           }).join('')}
           </tbody></table></div>`;
     }
     $('buscarProducto').oninput = dibujarProductos;
+    $('filtroCategoria').onchange = dibujarProductos;
 
     $('listaProductos').addEventListener('click', (e) => {
       const b = e.target.closest('[data-editar-producto]');
@@ -773,31 +1171,40 @@
     }
 
     function dibujarClientes() {
-      if (!clientes.length) { $('listaClientes').innerHTML = '<div class="vacio">Aún no hay clientes. Crea el primero.</div>'; return; }
-      $('listaClientes').innerHTML = `<div class="clientes">${clientes.map((c) => {
+      if (!clientes.length) {
+        $('listaClientes').innerHTML = estadoVacio('usuarios', 'Aún no hay clientes', 'Crea el primero: elige sus productos, ponle precios y mándale su link.',
+          `<button class="btn primario" onclick="abrirCliente(null, 1)">${icono('mas')}Nuevo cliente</button>`);
+        return;
+      }
+      const filtro = $('buscarCliente').value.trim().toLowerCase();
+      const lista = clientes.filter((c) => !filtro || `${c.nombre} ${c.tipo || ''} ${c.telefono || ''}`.toLowerCase().includes(filtro));
+      if (!lista.length) { $('listaClientes').innerHTML = estadoVacio('buscar', 'Ningún cliente coincide', 'Prueba con otra búsqueda.'); return; }
+      $('listaClientes').innerHTML = `<div class="clientes">${lista.map((c) => {
         const nSuc = c.sucursales.length, nProd = c.cliente_productos.length;
         const sinPrecio = c.cliente_productos.filter((x) => !(Number(x.precio) > 0)).length;
         return `
           <article class="cliente ${c.activo ? '' : 'inactivo'}">
             <div class="cliente-cab">
-              <h3>${esc(c.nombre)}</h3>
+              <div class="avatar">${esc(iniciales(c.nombre))}</div>
+              <div><h3>${esc(c.nombre)}</h3><div class="cliente-sub">${esc([c.tipo, c.telefono].filter(Boolean).join(' · ') || 'Sin datos de contacto')}</div></div>
               ${c.activo ? '' : '<span class="etiqueta cancelado">Inactivo</span>'}
             </div>
             <div class="cliente-datos">
-              ${esc([c.tipo, c.telefono].filter(Boolean).join(' · ') || 'Sin datos de contacto')}<br>
-              ${nProd} ${nProd === 1 ? 'producto' : 'productos'}${nSuc ? ` · ${nSuc} sucursales` : ''}
-              ${sinPrecio ? `<br><span class="margen-bajo">${sinPrecio} sin precio</span>` : ''}
+              <span class="etiqueta sin-punto">${esc(plural(nProd, 'producto', 'productos'))}</span>
+              ${nSuc ? `<span class="etiqueta sin-punto">${esc(plural(nSuc, 'sucursal', 'sucursales'))}</span>` : ''}
+              ${sinPrecio ? `<span class="etiqueta cancelado">${sinPrecio} sin precio</span>` : ''}
             </div>
-            <div class="link-caja"><code>${esc(urlCliente(c.token))}</code>
-              <button class="btn chico" data-copiar="${esc(c.id)}">Copiar link</button></div>
+            <div class="link-caja">${icono('enlace')}<code>${esc(urlCliente(c.token))}</code>
+              <button class="btn chico" data-copiar="${esc(c.id)}">${icono('copiar')}Copiar link</button></div>
             <div class="cliente-acciones">
-              <button class="btn chico" data-editar-cliente="${esc(c.id)}">Editar</button>
-              <button class="btn chico" data-precios="${esc(c.id)}">Productos y precios</button>
-              <button class="btn chico" data-enviar="${esc(c.id)}">Enviar link</button>
+              <button class="btn chico" data-editar-cliente="${esc(c.id)}">${icono('editar')}Editar</button>
+              <button class="btn chico" data-precios="${esc(c.id)}">${icono('etiqueta')}Productos y precios</button>
+              <button class="btn chico" data-enviar="${esc(c.id)}">${icono('mensaje')}Enviar link</button>
             </div>
           </article>`;
       }).join('')}</div>`;
     }
+    $('buscarCliente').oninput = dibujarClientes;
 
     $('listaClientes').addEventListener('click', async (e) => {
       const b = e.target.closest('button');
@@ -905,7 +1312,7 @@
     function dibujarTablaPrecios() {
       $('errorPaso').textContent = '';
       if (!productos.length) {
-        $('ppTabla').innerHTML = '<div class="vacio">Primero agrega productos en Catálogo.</div>';
+        $('ppTabla').innerHTML = estadoVacio('paquete', 'Primero agrega productos en Catálogo');
         $('ppContador').textContent = '';
         return;
       }
@@ -996,7 +1403,7 @@
       div.className = 'fila';
       div.dataset.id = s.id || '';
       div.innerHTML = `<input class="entrada" maxlength="60" placeholder="Nombre de la sucursal" value="${esc(s.nombre || '')}" />
-        <button type="button" class="btn chico" aria-label="Quitar sucursal">✕</button>`;
+        <button type="button" class="btn solo-icono" aria-label="Quitar sucursal">${icono('basura')}</button>`;
       div.querySelector('button').onclick = () => div.remove();
       $('clSucursales').appendChild(div);
     }
@@ -1107,6 +1514,22 @@
     }
 
     // ─────────── Ajustes ───────────
+    let colorEditado = COLOR_PREDETERMINADO;
+    let logoEditado = null;
+
+    const marcaGuardada = () => ({ color: ajustes.color_acento, logo: ajustes.logo, nombre: ajustes.nombre_negocio || 'PROVEEDOR' });
+    const marcaEditada = () => ({ color: colorEditado, logo: logoEditado, nombre: $('ajNombre').value.trim() || 'PROVEEDOR' });
+
+    function vistaPreviaMarca() {
+      aplicarMarca(marcaEditada());
+      $('ajLogoVista').innerHTML = logoEditado
+        ? `<img src="${esc(logoEditado)}" alt="Logo">`
+        : `<span class="monograma">${esc(iniciales($('ajNombre').value || 'PROVEEDOR'))}</span>`;
+      $('btnQuitarLogo').hidden = !logoEditado;
+      $('ajColor').value = colorEditado;
+      $('colores').querySelectorAll('button').forEach((b) => b.classList.toggle('activo', b.dataset.color.toLowerCase() === colorEditado.toLowerCase()));
+    }
+
     async function cargarAjustes() {
       const { data, error } = await db.from('ajustes').select('*').single();
       if (error) return;
@@ -1116,9 +1539,59 @@
       $('ajCorte').value = data.hora_corte ? data.hora_corte.slice(0, 5) : '';
       $('ajMargen').value = data.margen_minimo ?? '';
       $('ajInactividad').value = data.dias_inactividad ?? 7;
-      $('panelNegocio').textContent = data.nombre_negocio;
+      $('ajRazon').value = data.razon_social || '';
+      $('ajRfc').value = data.rfc || '';
+      $('ajTelefono').value = data.telefono || '';
+      $('ajDireccion').value = data.direccion || '';
+      $('ajLeyenda').value = data.leyenda_remision || '';
+      colorEditado = data.color_acento || COLOR_PREDETERMINADO;
+      logoEditado = data.logo || null;
+      vistaPreviaMarca();
       document.title = `Administración · ${data.nombre_negocio}`;
     }
+
+    $('colores').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-color]');
+      if (!b) return;
+      colorEditado = b.dataset.color;
+      vistaPreviaMarca();
+    });
+    $('ajColor').oninput = () => { colorEditado = $('ajColor').value; vistaPreviaMarca(); };
+    $('ajNombre').oninput = vistaPreviaMarca;
+    $('btnQuitarLogo').onclick = () => { logoEditado = null; vistaPreviaMarca(); };
+
+    /** Reduce la imagen a un máximo de 256 px y la convierte en data URL. */
+    function reducirImagen(archivo) {
+      return new Promise((resolver, rechazar) => {
+        const url = URL.createObjectURL(archivo);
+        const img = new Image();
+        img.onload = () => {
+          const escala = Math.min(1, 256 / Math.max(img.width, img.height));
+          const lienzo = document.createElement('canvas');
+          lienzo.width = Math.max(1, Math.round(img.width * escala));
+          lienzo.height = Math.max(1, Math.round(img.height * escala));
+          lienzo.getContext('2d').drawImage(img, 0, 0, lienzo.width, lienzo.height);
+          URL.revokeObjectURL(url);
+          let dato = lienzo.toDataURL('image/png');
+          if (dato.length > 280000) dato = lienzo.toDataURL('image/webp', 0.9);
+          if (dato.length > 280000) return rechazar(new Error('El logo es demasiado pesado. Prueba con una imagen más sencilla.'));
+          resolver(dato);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); rechazar(new Error('No se pudo leer la imagen.')); };
+        img.src = url;
+      });
+    }
+    $('ajLogoArchivo').onchange = async () => {
+      const archivo = $('ajLogoArchivo').files[0];
+      $('ajLogoArchivo').value = '';
+      if (!archivo) return;
+      try {
+        logoEditado = await reducirImagen(archivo);
+        vistaPreviaMarca();
+      } catch (err) {
+        mostrarToast(err.message, 'error');
+      }
+    };
 
     $('formAjustes').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1129,6 +1602,13 @@
         hora_corte: $('ajCorte').value || null,
         margen_minimo: numero($('ajMargen').value),
         dias_inactividad: Math.round(numero($('ajInactividad').value) || 7),
+        color_acento: colorEditado,
+        logo: logoEditado,
+        razon_social: $('ajRazon').value.trim() || null,
+        rfc: $('ajRfc').value.trim().toUpperCase() || null,
+        telefono: $('ajTelefono').value.trim() || null,
+        direccion: $('ajDireccion').value.trim() || null,
+        leyenda_remision: $('ajLeyenda').value.trim(),
       }).eq('id', 1);
       if (error) return mostrarToast(/whatsapp/.test(error.message) ? 'El WhatsApp debe tener de 10 a 15 dígitos.' : mensajeError(error), 'error');
       mostrarToast('Ajustes guardados');
