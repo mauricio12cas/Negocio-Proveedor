@@ -13,12 +13,13 @@ const { chromium } = require('playwright');
 
 const APP = new URL('../app/', import.meta.url);
 const UMD = new URL('./node_modules/@supabase/supabase-js/dist/umd/', import.meta.url);
+const CHART = new URL('./node_modules/chart.js/dist/chart.umd.js', import.meta.url);
 const CAPTURAS = process.env.SCREENSHOTS ? new URL('./capturas/', import.meta.url) : null;
 if (CAPTURAS) mkdirSync(CAPTURAS, { recursive: true });
 const captura = (page, nombre, opciones = {}) =>
   CAPTURAS ? page.screenshot({ path: new URL(`${nombre}.png`, CAPTURAS).pathname, ...opciones }) : null;
 
-const TIPOS = { html: 'text/html', js: 'application/javascript', css: 'text/css' };
+const TIPOS = { html: 'text/html', js: 'application/javascript', css: 'text/css', svg: 'image/svg+xml' };
 const json = (route, cuerpo, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(cuerpo) });
 
@@ -35,6 +36,9 @@ async function servirApp(page) {
     const archivo = new URL(route.request().url()).pathname.split('/').pop();
     route.fulfill({ contentType: TIPOS.js, body: readFileSync(new URL(archivo, UMD)) });
   });
+  await page.route('https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.js', (route) =>
+    route.fulfill({ contentType: TIPOS.js, body: readFileSync(CHART) }));
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
   await page.route('http://app.test/**', (route) => {
     const ruta = new URL(route.request().url()).pathname.slice(1) || 'index.html';
     if (ruta === 'config.js') {
@@ -100,7 +104,7 @@ async function rpcContraPGlite(route) {
 }
 
 async function abrirCliente(token, opciones = {}) {
-  const page = await navegador.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, ...opciones });
+  const page = await navegador.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: CAPTURAS ? 2 : 1, ...opciones });
   const errores = [];
   page.on('pageerror', (e) => errores.push(e.message));
   page.on('dialog', (d) => { errores.push(`diálogo inesperado: ${d.message()}`); d.dismiss(); });
@@ -206,7 +210,40 @@ await prueba('flujo completo: tira de días, precios, revisar, confirmar e histo
   assert.match(tarjeta, /Recibido/);
   assert.match(tarjeta, /Total\s*\$5,461\.00/);
   await captura(page, 'cliente-historial');
+  const folio = (await db.query(`select folio::int as f from pedidos order by folio limit 1`)).rows[0].f;
+  assert.equal(await page.getAttribute('.tarjeta-acciones a', 'href'), `remision.html?t=tokencentro&folio=${folio}`);
   assert.deepEqual(errores, []);
+
+  // La nota del cliente se arma con sus propios datos
+  await page.goto(`http://app.test/remision.html?t=tokencentro&folio=${folio}`);
+  await page.locator('.hoja').waitFor();
+  const hoja = await page.textContent('.hoja');
+  assert.match(hoja, new RegExp(`R-${String(folio).padStart(6, '0')}`));
+  assert.match(hoja, /Café Centro/);
+  assert.match(hoja, /TOTAL\s*\$5,461\.00/);
+  assert.match(hoja, /CINCO MIL CUATROCIENTOS SESENTA Y UN PESOS 00\/100 M\.N\./);
+  assert.match(hoja, /Tocar el timbre/);
+  await page.goto(`http://app.test/remision.html?t=tokencentro&folio=99999`);
+  await page.getByText('Pedido no encontrado').first().waitFor();
+  assert.deepEqual(errores, []);
+  await page.close();
+});
+
+await prueba('la pantalla del cliente usa el color y el logo del negocio', async () => {
+  await db.exec(`update ajustes set color_acento = '#be123c', logo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' where id = 1`);
+  const { page, errores } = await abrirCliente('tokencentro', { colorScheme: 'dark' });
+  await page.getByText('Café Centro').waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--acento')), '#be123c');
+  assert.ok(await page.locator('.cabecera [data-marca-logo] img').count());
+  assert.equal(await page.locator('#chips button').count(), 4);
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'sin desplazamiento horizontal');
+  await page.click(`#tiraDias button[data-fecha="${sumarDias(fechaMin, 3)}"]`);
+  await page.locator('.producto', { hasText: 'Frijol negro' }).getByLabel('Más').click();
+  await page.locator('#barra.visible').waitFor();
+  await page.waitForTimeout(350);
+  await captura(page, 'cliente-oscuro-marca');
+  assert.deepEqual(errores, []);
+  await db.exec(`update ajustes set color_acento = '#0f766e', logo = null where id = 1`);
   await page.close();
 });
 
@@ -266,7 +303,9 @@ console.log('Panel de administración');
 
 const MANANA = sumarDias(hoyMX(), 1);
 const fixturas = () => ({
-  ajustes: { id: 1, nombre_negocio: 'PROVEEDOR', whatsapp: null, hora_corte: '20:00:00', zona_horaria: 'America/Mexico_City', margen_minimo: 15, dias_inactividad: 7 },
+  ajustes: { id: 1, nombre_negocio: 'PROVEEDOR', whatsapp: null, hora_corte: '20:00:00', zona_horaria: 'America/Mexico_City', margen_minimo: 15, dias_inactividad: 7,
+    color_acento: '#0f766e', logo: null, razon_social: 'Proveedora del Centro SA de CV', rfc: 'PCE010101AB1', direccion: 'Calle 1 #2, CDMX', telefono: '55 1111 2222',
+    leyenda_remision: 'Precios con IVA incluido. Este documento no es un comprobante fiscal.' },
   productos: [
     { id: 'p1', nombre: 'Frijol negro', categoria: 'Granos', presentacion: 'Costal 25 kg', unidad: 'costal', activo: true, precio_base: 500, costo: 400 },
     { id: 'p2', nombre: 'Aceite vegetal', categoria: 'Aceites', presentacion: 'Caja 12 L', unidad: 'caja', activo: true, precio_base: 380, costo: 360 },
@@ -288,7 +327,7 @@ const fixturas = () => ({
   ],
   pedidos: [
     { id: 'pe1', folio: 7, fecha_entrega: MANANA, estado: 'recibido', notas: '<script>window.__xss=1</script>', creado: '2026-11-19T18:00:00Z',
-      clientes: { nombre: 'Cocina Norte', direccion: 'Av. Siempre Viva 123', horario_recepcion: '7 a 10', instrucciones: null },
+      clientes: { nombre: 'Cocina Norte', telefono: '5598765432', direccion: 'Av. Siempre Viva 123', horario_recepcion: '7 a 10', instrucciones: null },
       pedido_lineas: [
         { sucursal_nombre: '', producto_nombre: 'Frijol negro', presentacion: 'Costal 25 kg', unidad: 'costal', cantidad: 2, precio_unitario: 480, importe: 960 },
         { sucursal_nombre: '', producto_nombre: 'Aceite vegetal', presentacion: 'Caja 12 L', unidad: 'caja', cantidad: 1, precio_unitario: 400, importe: 400 },
@@ -301,10 +340,11 @@ const fixturas = () => ({
   ],
 });
 
-async function abrirAdmin({ esAdmin = true } = {}) {
-  const page = await navegador.newPage({ viewport: { width: 1280, height: 860 }, deviceScaleFactor: 1 });
+async function abrirAdmin({ esAdmin = true, viewport = { width: 1280, height: 860 }, colorScheme = 'light' } = {}) {
+  const page = await navegador.newPage({ viewport, deviceScaleFactor: CAPTURAS ? 2 : 1, colorScheme });
   const errores = [];
   const cambios = [];
+  const llamadasEstadisticas = [];
   const FIX = fixturas();
   page.on('pageerror', (e) => errores.push(e.message));
   await servirApp(page);
@@ -324,6 +364,19 @@ async function abrirAdmin({ esAdmin = true } = {}) {
     const url = new URL(req.url());
     const tabla = url.pathname.split('/').pop();
     if (url.pathname.includes('/rpc/es_admin')) return json(route, esAdmin);
+    if (url.pathname.includes('/rpc/estadisticas_ventas')) {
+      const { p_desde, p_hasta } = req.postDataJSON();
+      llamadasEstadisticas.push([p_desde, p_hasta]);
+      const por_dia = [];
+      for (let f = p_desde; f <= p_hasta; f = sumarDias(f, 1)) por_dia.push({ fecha: f, total: f === p_hasta ? 1360 : f === sumarDias(p_hasta, -2) ? 640 : 0, pedidos: f === p_hasta || f === sumarDias(p_hasta, -2) ? 1 : 0 });
+      return json(route, {
+        desde: p_desde, hasta: p_hasta, por_dia,
+        totales: { total: 2000, pedidos: 2, ticket_promedio: 1000 },
+        periodo_anterior: { total: 1600, pedidos: 2, ticket_promedio: 800 },
+        top_clientes: [{ nombre: 'Cocina Norte', total: 1360, pedidos: 1 }, { nombre: 'Café <b>Centro</b>', total: 640, pedidos: 1 }],
+        top_productos: [{ nombre: 'Frijol negro', total: 1600, cantidad: 4 }, { nombre: 'Aceite vegetal', total: 400, cantidad: 1 }],
+      });
+    }
     if (req.method() !== 'GET') {
       const cuerpo = req.postDataJSON();
       cambios.push({ metodo: req.method(), tabla, query: url.search, cuerpo, prefer: req.headers()['prefer'] || '' });
@@ -346,7 +399,7 @@ async function abrirAdmin({ esAdmin = true } = {}) {
     return json(route, datos);
   });
   await page.goto('http://app.test/admin.html');
-  return { page, errores, cambios };
+  return { page, errores, cambios, llamadasEstadisticas, FIX };
 }
 
 async function iniciarSesion(page) {
@@ -367,13 +420,25 @@ await prueba('un usuario sin permiso no entra al panel', async () => {
   await page.close();
 });
 
-await prueba('inicio: métricas, clientes sin pedir y alertas', async () => {
-  const { page, errores } = await abrirAdmin();
+await prueba('inicio: métricas, gráficas, clientes sin pedir y alertas', async () => {
+  const { page, errores, llamadasEstadisticas } = await abrirAdmin();
   await iniciarSesion(page);
+  await page.locator('#mVentas .valor', { hasText: '$' }).waitFor();
   const metricas = await page.textContent('#metricas');
   assert.match(metricas, /Por confirmar\s*1/);
   assert.match(metricas, /Entregas de mañana\s*1\s*\$1,360\.00/);
-  assert.match(metricas, /Por entregar en 7 días\s*\$1,360\.00/);
+  assert.match(metricas, /Ventas\s*\$2,000\.00\s*▲ 25 %/);
+  assert.match(metricas, /Ticket promedio\s*\$1,000\.00\s*2 pedidos/);
+  assert.equal(await page.textContent('#insigniaPedidos'), '1');
+
+  // Gráfica de 30 días hasta hoy y tops con barras
+  assert.deepEqual(llamadasEstadisticas[0], [sumarDias(hoyMX(), -29), hoyMX()]);
+  await page.waitForFunction(() => window.Chart && Chart.getChart('graficaVentas'));
+  assert.equal(await page.evaluate(() => Chart.getChart('graficaVentas').data.datasets[0].data.length), 30);
+  assert.match(await page.textContent('#graficaTotal'), /\$2,000\.00\s*2 pedidos/);
+  assert.match(await page.textContent('#topClientes'), /Cocina Norte.*\$1,360\.00.*Café <b>Centro<\/b>/s);
+  assert.equal(await page.locator('#topProductos .barra-fila').count(), 2);
+
   const inactivos = await page.textContent('#listaInactivos');
   assert.match(inactivos, /Café <b>Centro<\/b>/);
   assert.match(inactivos, /Nunca ha pedido/);
@@ -382,12 +447,40 @@ await prueba('inicio: métricas, clientes sin pedir y alertas', async () => {
   assert.match(alertas, /Cocina Norte.*1 producto sin precio/s);
   assert.match(alertas, /Aceite vegetal · Cocina Norte.*Margen 10\.0 %/s);
   assert.match(alertas, /Frijol negro · Café Centro.*Margen 11\.1 %/s);
-  await captura(page, 'admin-inicio');
+  await page.waitForTimeout(450);   // termina la animación de la gráfica
+  await captura(page, 'admin-inicio', { fullPage: true });
+
+  // Cambiar a 7 días vuelve a pedir las estadísticas
+  await page.click('#rangoInicio button[data-dias="7"]');
+  await page.waitForFunction(() => Chart.getChart('graficaVentas')?.data.datasets[0].data.length === 7);
+  assert.deepEqual(llamadasEstadisticas.at(-1), [sumarDias(hoyMX(), -6), hoyMX()]);
+
+  // Modo oscuro: se guarda y la gráfica se redibuja
+  await page.click('#selectorTema button[data-tema="oscuro"]');
+  assert.equal(await page.getAttribute('html', 'data-tema'), 'oscuro');
+  assert.equal(await page.evaluate(() => localStorage.getItem('tema')), 'oscuro');
+  await page.waitForTimeout(450);
+  await captura(page, 'admin-inicio-oscuro', { fullPage: true });
+  await page.click('#selectorTema button[data-tema="sistema"]');
+  assert.equal(await page.getAttribute('html', 'data-tema'), null);
 
   // «Por confirmar» lleva a Pedidos filtrado
   await page.click('#mPorConfirmar');
   await page.locator('.pedido').first().waitFor();
   assert.equal(await page.inputValue('#filtroEstado'), 'recibido');
+  assert.deepEqual(errores, []);
+  await page.close();
+});
+
+await prueba('inicio en celular: menú inferior y sin desbordes', async () => {
+  const { page, errores } = await abrirAdmin({ viewport: { width: 390, height: 844 } });
+  await iniciarSesion(page);
+  await page.locator('#mVentas .valor', { hasText: '$' }).waitFor();
+  const menu = await page.locator('#menu').boundingBox();
+  assert.ok(menu.y + menu.height >= 840, 'el menú queda abajo');
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'sin desplazamiento horizontal');
+  await page.waitForTimeout(450);
+  await captura(page, 'admin-inicio-celular');
   assert.deepEqual(errores, []);
   await page.close();
 });
@@ -404,6 +497,7 @@ await prueba('pedidos: precios, total, escape y cambio de estado', async () => {
   assert.match(pedido, /Total\s*\$1,360\.00/);
   assert.equal(await page.textContent('.pedido-notas'), '<script>window.__xss=1</script>');
   assert.equal(await page.evaluate(() => window.__xss), undefined);
+  assert.equal(await page.getAttribute('[data-remision="pe1"]', 'href'), 'remision.html?pedido=pe1');
   await captura(page, 'admin-pedidos');
 
   await page.selectOption('select[data-pedido="pe1"]', 'confirmado');
@@ -539,6 +633,93 @@ await prueba('catálogo: margen y pegar desde Excel con precio y costo', async (
     { costo: null, nombre: 'Sal', categoria: 'General', presentacion: '', unidad: 'pieza', precio_base: 0 },
   ]);
   assert.deepEqual(errores, []);
+  await page.close();
+});
+
+await prueba('ajustes: logo, color y datos de remisión', async () => {
+  const { page, errores, cambios } = await abrirAdmin();
+  await iniciarSesion(page);
+  await page.click('#menu button[data-vista="ajustes"]');
+  assert.equal(await page.inputValue('#ajRfc'), 'PCE010101AB1');
+
+  // Elegir un color cambia el acento en vivo
+  await page.click('#colores button[data-color="#1d4ed8"]');
+  assert.equal(await page.evaluate(() => document.documentElement.style.getPropertyValue('--acento')), '#1d4ed8');
+
+  // Subir un logo lo reduce a 256 px
+  const png = Buffer.from(await page.evaluate(() => {
+    const c = document.createElement('canvas'); c.width = 600; c.height = 300;
+    const g = c.getContext('2d'); g.fillStyle = '#c00'; g.fillRect(0, 0, 600, 300);
+    return c.toDataURL('image/png').split(',')[1];
+  }), 'base64');
+  await page.setInputFiles('#ajLogoArchivo', { name: 'logo.png', mimeType: 'image/png', buffer: png });
+  await page.locator('#ajLogoVista img').waitFor();
+  const medida = await page.evaluate(() => new Promise((ok) => {
+    const i = new Image(); i.onload = () => ok([i.width, i.height]); i.src = document.querySelector('#ajLogoVista img').src;
+  }));
+  assert.deepEqual(medida, [256, 128]);
+  assert.ok(await page.locator('.lateral [data-marca-logo] img').count(), 'el logo se ve en el menú');
+  await captura(page, 'admin-ajustes', { fullPage: true });
+
+  await page.fill('#ajRfc', 'abc010101xy9');
+  await page.click('#btnGuardarAjustes');
+  await page.locator('.toast.visible', { hasText: 'Ajustes guardados' }).waitFor();
+  const patch = cambios.find((c) => c.tabla === 'ajustes');
+  assert.equal(patch.cuerpo.color_acento, '#1d4ed8');
+  assert.match(patch.cuerpo.logo, /^data:image\/png;base64,/);
+  assert.equal(patch.cuerpo.rfc, 'ABC010101XY9');
+  assert.equal(patch.cuerpo.razon_social, 'Proveedora del Centro SA de CV');
+  assert.deepEqual(errores, []);
+  await page.close();
+});
+
+await prueba('remisión desde el panel: datos, líneas, total en letra e impresión', async () => {
+  const { page, errores } = await abrirAdmin();
+  await iniciarSesion(page);
+  await page.goto('http://app.test/remision.html?pedido=pe1');
+  await page.locator('.hoja').waitFor();
+  const hoja = await page.textContent('.hoja');
+  assert.match(hoja, /REMISIÓN\s*R-000007/);
+  assert.match(hoja, /Proveedora del Centro SA de CV/);
+  assert.match(hoja, /RFC PCE010101AB1/);
+  assert.match(hoja, /Cocina Norte/);
+  assert.match(hoja, /Av\. Siempre Viva 123/);
+  assert.match(hoja, /Horario: 7 a 10/);
+  assert.match(hoja, /2\s*costal\s*Frijol negro.*\$480\.00\s*\$960\.00/s);
+  assert.match(hoja, /TOTAL\s*\$1,360\.00/);
+  assert.match(hoja, /MIL TRESCIENTOS SESENTA PESOS 00\/100 M\.N\./);
+  assert.match(hoja, /Recibí de conformidad/);
+  assert.match(hoja, /no es un comprobante fiscal/);
+  assert.equal(await page.textContent('.hoja .notas'), 'Notas: <script>window.__xss=1</script>');
+  assert.equal(await page.evaluate(() => window.__xss), undefined);
+  assert.ok(await page.isEnabled('#btnImprimir'));
+  await captura(page, 'remision', { fullPage: true });
+  await page.emulateMedia({ media: 'print' });
+  assert.equal(await page.isVisible('.barra-herramientas'), false);
+  await page.emulateMedia({ media: 'screen' });
+  assert.deepEqual(errores, []);
+  await page.close();
+});
+
+await prueba('remisión sin sesión pide iniciar sesión', async () => {
+  const page = await navegador.newPage();
+  await servirApp(page);
+  await page.route('http://supabase.test/**', (route) => route.fulfill({ status: 204, body: '' }));
+  await page.goto('http://app.test/remision.html?fecha=2026-11-20');
+  await page.getByText('Inicia sesión', { exact: true }).first().waitFor();
+  await page.close();
+});
+
+await prueba('número con letra', async () => {
+  const page = await navegador.newPage();
+  await servirApp(page);
+  await page.goto('http://app.test/remision.html');
+  const r = await page.evaluate(() => [0, 1, 21, 100, 101, 1281, 21000, 1000000, 2500000.5, 45.07].map(numeroALetras));
+  assert.deepEqual(r, [
+    'CERO PESOS 00/100 M.N.', 'UN PESO 00/100 M.N.', 'VEINTIÚN PESOS 00/100 M.N.', 'CIEN PESOS 00/100 M.N.',
+    'CIENTO UN PESOS 00/100 M.N.', 'MIL DOSCIENTOS OCHENTA Y UN PESOS 00/100 M.N.', 'VEINTIÚN MIL PESOS 00/100 M.N.',
+    'UN MILLÓN DE PESOS 00/100 M.N.', 'DOS MILLONES QUINIENTOS MIL PESOS 50/100 M.N.', 'CUARENTA Y CINCO PESOS 07/100 M.N.',
+  ]);
   await page.close();
 });
 

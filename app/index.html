@@ -2,135 +2,168 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#f6f6f4" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#121a2b" media="(prefers-color-scheme: dark)" />
   <title>Pedidos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
   <link rel="stylesheet" href="base.css" />
   <style>
+    body { font-size: 15px; }
     .cabecera {
-      position: sticky; top: 0; z-index: 50; background: var(--fondo);
-      border-bottom: 1px solid var(--borde); padding: 14px 16px 12px;
+      position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--superficie) 88%, transparent);
+      backdrop-filter: saturate(1.6) blur(12px); -webkit-backdrop-filter: saturate(1.6) blur(12px);
+      border-bottom: 1px solid var(--borde);
     }
+    .cabecera-interior { max-width: 680px; margin: 0 auto; padding: 12px 16px 12px; }
     .cabecera-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .negocio { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--tenue); }
-    .cliente-nombre { font-size: 22px; font-weight: 800; line-height: 1.15; margin-top: 4px; }
-    .contenido { max-width: 640px; margin: 0 auto; padding: 0 16px; }
+    .cabecera .marca-logo { width: 30px; height: 30px; border-radius: 8px; }
+    .negocio { font-size: 13px; font-weight: 700; letter-spacing: .04em; color: var(--texto-2); }
+    .saludo { margin-top: 12px; }
+    .saludo small { display: block; color: var(--tenue); font-size: 13px; }
+    .cliente-nombre { font-size: 22px; font-weight: 750; line-height: 1.15; letter-spacing: -.02em; }
+    .chips { display: flex; gap: 6px; overflow-x: auto; margin: 12px -16px -2px; padding: 0 16px 2px; scrollbar-width: none; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chips button { flex: 0 0 auto; border: 1px solid var(--borde); background: var(--superficie); border-radius: 999px; padding: 6px 13px; font-size: 13px; font-weight: 600; color: var(--texto-2); }
+    .chips button:hover { border-color: var(--acento-borde); color: var(--acento-tinta); }
+    .contenido { max-width: 680px; margin: 0 auto; padding: 0 16px; }
 
     .estado-pantalla { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 32px 8px; }
     .estado-pantalla h2 { font-size: 20px; }
-    .estado-pantalla p { color: var(--tenue); }
+    .estado-pantalla p { color: var(--tenue); max-width: 340px; }
+    .estado-pantalla .vacio-icono { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: var(--acento-suave); color: var(--acento-tinta); }
 
-    .titulo-seccion { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--tenue); margin: 20px 0 10px; display: flex; justify-content: space-between; align-items: center; }
-    .titulo-seccion .btn { text-transform: none; letter-spacing: 0; }
+    .titulo-seccion { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 26px 0 12px; }
+    .titulo-seccion h2 { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+    .titulo-seccion h2 .n { width: 24px; height: 24px; border-radius: 50%; background: var(--acento); color: var(--acento-texto); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+    .titulo-seccion h2 small { font-weight: 500; color: var(--tenue); font-size: 13px; }
 
     /* Calendario (dentro del modal «Otra fecha») */
     .cal-cab { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 8px; }
     .cal-mes { font-weight: 700; text-transform: capitalize; }
-    .cal-nav { width: 38px; height: 38px; border-radius: 10px; border: 0; background: transparent; font-size: 20px; }
+    .cal-nav { width: 38px; height: 38px; border-radius: 10px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
     .cal-nav:hover:not(:disabled) { background: var(--superficie-2); }
     .cal-nav:disabled { opacity: .25; cursor: default; }
     .cal-semana, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
     .cal-semana div { text-align: center; font-size: 11px; font-weight: 700; color: var(--tenue); padding: 4px 0; }
     .cal-dia { aspect-ratio: 1; border: 0; background: transparent; border-radius: 10px; font-size: 15px; font-weight: 600; position: relative; }
-    .cal-dia:disabled { color: #c5c5bf; cursor: default; font-weight: 400; }
+    .cal-dia:disabled { color: var(--tenue-2); opacity: .55; cursor: default; font-weight: 400; }
     .cal-dia.disponible:hover { background: var(--superficie-2); }
-    .cal-dia.con-pedido { box-shadow: inset 0 0 0 2px var(--resalte-suave); color: var(--resalte); }
-    .cal-dia.con-pedido::after { content: ''; position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--resalte); }
+    .cal-dia.con-pedido { box-shadow: inset 0 0 0 2px var(--exito-suave); color: var(--exito); }
+    .cal-dia.con-pedido::after { content: ''; position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--exito); }
     .cal-dia.seleccionado { background: var(--acento); color: var(--acento-texto); box-shadow: none; }
 
-    .fecha-elegida { margin-top: 6px; color: var(--tenue); font-size: 14px; }
+    .fecha-elegida { margin-top: 4px; color: var(--tenue); font-size: 14px; display: flex; align-items: center; gap: 7px; }
     .fecha-elegida strong { color: var(--texto); }
-    .aviso { margin-top: 12px; padding: 12px 14px; border-radius: var(--radio); background: var(--resalte-suave); color: var(--resalte); font-size: 14px; }
+    .aviso { margin-top: 12px; padding: 12px 14px; border-radius: var(--radio); background: var(--exito-suave); color: var(--exito); font-size: 14px; border: 1px solid color-mix(in srgb, var(--exito) 25%, transparent); }
     .aviso button { margin-top: 8px; }
 
     /* Productos */
-    .sucursal { margin-top: 18px; }
-    .sucursal-cab { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 2px solid var(--texto); }
-    .sucursal-cab h3 { font-size: 17px; }
-    .categoria { font-size: 12px; font-weight: 700; color: var(--tenue); letter-spacing: .08em; text-transform: uppercase; padding: 14px 0 4px; }
-    .producto { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--borde); }
+    .sucursal { margin-top: 18px; scroll-margin-top: 170px; }
+    .sucursal-cab { display: flex; align-items: center; justify-content: space-between; padding: 6px 2px 10px; }
+    .sucursal-cab h3 { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .sucursal-cab h3 .ico { color: var(--acento-tinta); }
+    .grupo-cat { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio-l); box-shadow: var(--sombra-1); margin-bottom: 12px; overflow: hidden; scroll-margin-top: 170px; }
+    .categoria { font-size: 12px; font-weight: 700; color: var(--tenue); letter-spacing: .08em; text-transform: uppercase; padding: 12px 16px 4px; }
+    .producto { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--borde); }
+    .categoria + .producto { border-top: 0; }
+    .producto.con-cantidad { background: color-mix(in srgb, var(--acento-suave) 70%, var(--superficie)); }
     .producto-info { flex: 1; min-width: 0; }
     .producto-nombre { font-weight: 600; }
     .producto-pres { font-size: 13px; color: var(--tenue); }
-    .producto-precio { font-size: 14px; font-weight: 700; margin-top: 2px; }
-    .producto-precio .sub { color: var(--resalte); font-weight: 700; margin-left: 6px; }
+    .producto-precio { font-size: 14px; font-weight: 700; margin-top: 3px; font-variant-numeric: tabular-nums; }
+    .producto-precio .sub { color: var(--acento-tinta); font-weight: 700; margin-left: 6px; }
     .producto-precio.sin-precio { color: var(--aviso); font-weight: 600; font-size: 13px; }
-    .cantidad { display: flex; align-items: center; background: var(--superficie); border: 1px solid var(--borde); border-radius: 12px; flex-shrink: 0; }
+    .cantidad { display: flex; align-items: center; background: var(--superficie-2); border: 1px solid var(--borde); border-radius: 12px; flex-shrink: 0; }
     .cantidad button { width: 44px; height: 44px; border: 0; background: transparent; font-size: 22px; color: var(--texto); border-radius: 12px; }
-    .cantidad button:active { background: var(--superficie-2); }
+    .cantidad button:active { background: var(--superficie-3); }
     .cantidad button:disabled { opacity: .3; cursor: not-allowed; }
-    .cantidad .num { min-width: 40px; height: 44px; border: 0; background: transparent; font-weight: 700; font-size: 16px; }
-    .cantidad .num.activo { color: var(--resalte); }
-    .bloqueado { opacity: .4; pointer-events: none; }
+    .cantidad .num { min-width: 40px; height: 44px; border: 0; background: transparent; font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+    .cantidad .num.activo { color: var(--acento-tinta); }
+    .producto.con-cantidad .cantidad { background: var(--superficie); border-color: var(--acento-borde); }
+    .bloqueado { opacity: .4; pointer-events: none; filter: grayscale(.4); }
 
-    textarea.notas { width: 100%; min-height: 80px; resize: vertical; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 12px; outline: none; }
-    textarea.notas:focus { border-color: var(--acento); }
-    .relleno-inferior { height: 140px; }
+    textarea.notas { width: 100%; min-height: 84px; resize: vertical; background: var(--superficie); border: 1px solid var(--borde-fuerte); border-radius: var(--radio); padding: 12px 14px; outline: none; }
+    textarea.notas:focus { border-color: var(--acento); box-shadow: var(--anillo); }
+    .relleno-inferior { height: 150px; }
 
     /* Barra inferior */
     .barra {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-      background: var(--superficie); border-top: 1px solid var(--borde);
-      padding: 10px 16px calc(14px + env(safe-area-inset-bottom));
-      transform: translateY(110%); transition: transform .25s;
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; padding: 0 12px calc(12px + env(safe-area-inset-bottom));
+      transform: translateY(130%); transition: transform .3s cubic-bezier(.2, .8, .2, 1); pointer-events: none;
     }
-    .barra.visible { transform: translateY(0); }
-    .barra-interior { max-width: 640px; margin: 0 auto; }
-    .barra-info { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; color: var(--tenue); margin-bottom: 8px; }
-    .barra-info strong { color: var(--texto); font-size: 18px; }
-    .barra .btn { width: 100%; padding: 14px; font-size: 16px; }
+    .barra.visible { transform: translateY(0); pointer-events: auto; }
+    .barra-interior {
+      max-width: 656px; margin: 0 auto; background: var(--superficie); border: 1px solid var(--borde);
+      border-radius: 18px; padding: 12px 12px 12px 16px; box-shadow: var(--sombra-3); display: flex; align-items: center; gap: 12px;
+    }
+    .barra-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .barra-info span { font-size: 13px; color: var(--tenue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .barra-info strong { color: var(--texto); font-size: 19px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+    .barra .btn { padding: 13px 18px; font-size: 15px; border-radius: 12px; }
 
     /* Teclado numérico */
-    .teclado-fondo { position: fixed; inset: 0; z-index: 600; background: rgba(0,0,0,.45); display: none; align-items: flex-end; justify-content: center; }
-    .teclado-fondo.visible { display: flex; }
-    .teclado { width: 100%; max-width: 480px; background: var(--superficie); border-radius: 20px 20px 0 0; padding: 18px 16px calc(22px + env(safe-area-inset-bottom)); }
-    .teclado-titulo { font-weight: 700; }
-    .teclado-sub { font-size: 13px; color: var(--tenue); margin-bottom: 10px; }
-    .teclado-pantalla { background: var(--superficie-2); border-radius: 14px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 800; margin-bottom: 12px; }
+    .teclado-fondo { position: fixed; inset: 0; z-index: 600; background: var(--velo); display: none; align-items: flex-end; justify-content: center; }
+    .teclado-fondo.visible { display: flex; animation: aparecer .18s ease-out; }
+    .teclado { width: 100%; max-width: 480px; background: var(--superficie); border-radius: 22px 22px 0 0; padding: 18px 16px calc(22px + env(safe-area-inset-bottom)); animation: hojaTeclado .26s cubic-bezier(.2, .8, .2, 1); }
+    @keyframes hojaTeclado { from { transform: translateY(100%); } }
+    .teclado-titulo { font-weight: 700; font-size: 16px; }
+    .teclado-sub { font-size: 13px; color: var(--tenue); margin-bottom: 12px; }
+    .teclado-pantalla { background: var(--superficie-2); border-radius: 14px; height: 72px; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 800; margin-bottom: 12px; font-variant-numeric: tabular-nums; }
     .teclado-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .tecla { height: 58px; border: 0; border-radius: 14px; background: var(--superficie-2); font-size: 22px; font-weight: 600; }
-    .tecla:active { transform: scale(.96); }
+    .tecla:active { transform: scale(.96); background: var(--superficie-3); }
     .tecla.ok { background: var(--acento); color: var(--acento-texto); font-size: 17px; }
 
     /* Revisión */
-    .resumen-fecha { font-size: 15px; margin-bottom: 4px; }
-    .resumen-suc { font-size: 12px; font-weight: 700; color: var(--tenue); text-transform: uppercase; letter-spacing: .06em; margin-top: 14px; }
-    .resumen-linea { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 8px 0; border-bottom: 1px solid var(--borde); font-size: 14px; }
+    .resumen-fecha { font-size: 15px; margin-bottom: 4px; display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 10px; background: var(--acento-suave); }
+    .resumen-fecha .ico { color: var(--acento-tinta); }
+    .resumen-suc { font-size: 12px; font-weight: 700; color: var(--tenue); text-transform: uppercase; letter-spacing: .06em; margin-top: 16px; }
+    .resumen-linea { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 9px 0; border-bottom: 1px solid var(--borde); font-size: 14px; }
     .resumen-linea .calc { grid-column: 1; font-size: 13px; color: var(--tenue); }
     .resumen-linea .imp { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-weight: 700; font-variant-numeric: tabular-nums; }
     .resumen-notas { font-size: 14px; color: var(--tenue); margin-top: 12px; white-space: pre-wrap; }
-    .resumen-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; padding-top: 12px; border-top: 2px solid var(--texto); font-weight: 800; font-size: 20px; }
+    .resumen-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; padding-top: 12px; border-top: 2px solid var(--texto); font-weight: 800; font-size: 21px; font-variant-numeric: tabular-nums; }
     .resumen-total small { font-size: 12px; font-weight: 500; color: var(--tenue); }
 
     /* Historial */
-    .cajon-fondo { position: fixed; inset: 0; z-index: 250; background: rgba(0,0,0,.45); display: none; align-items: flex-end; justify-content: center; }
-    .cajon-fondo.visible { display: flex; }
-    .cajon { width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto; background: var(--fondo); border-radius: 20px 20px 0 0; padding: 18px 16px 32px; }
+    .cajon-fondo { position: fixed; inset: 0; z-index: 250; background: var(--velo); display: none; align-items: flex-end; justify-content: center; }
+    .cajon-fondo.visible { display: flex; animation: aparecer .18s ease-out; }
+    .cajon { width: 100%; max-width: 680px; max-height: 88vh; overflow-y: auto; background: var(--fondo); border-radius: 22px 22px 0 0; padding: 18px 16px calc(32px + env(safe-area-inset-bottom)); animation: hojaTeclado .28s cubic-bezier(.2, .8, .2, 1); }
     .cajon-cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-    .cajon-cab h2 { font-size: 20px; }
-    .tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px; margin-bottom: 10px; }
+    .cajon-cab h2 { font-size: 20px; letter-spacing: -.01em; }
+    .historial .tarjeta { padding: 16px; margin-bottom: 12px; }
     .tarjeta-cab { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
     .tarjeta-fecha { font-weight: 700; }
     .tarjeta-sub { font-size: 12px; color: var(--tenue); }
     .tarjeta-suc { font-size: 12px; font-weight: 700; color: var(--tenue); text-transform: uppercase; letter-spacing: .06em; margin-top: 8px; }
-    .tarjeta-linea { font-size: 14px; display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
-    .tarjeta-total { display: flex; justify-content: space-between; font-weight: 800; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--borde); }
+    .tarjeta-linea { font-size: 14px; display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+    .tarjeta-linea strong { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .tarjeta-total { display: flex; justify-content: space-between; font-weight: 800; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--borde); font-variant-numeric: tabular-nums; }
     .tarjeta-notas { font-size: 13px; color: var(--tenue); margin-top: 8px; }
+    .tarjeta-acciones { margin-top: 12px; display: flex; justify-content: flex-end; }
 
     .exito { text-align: center; }
-    .exito-icono { width: 56px; height: 56px; border-radius: 50%; background: var(--resalte-suave); color: var(--resalte); font-size: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+    .exito-icono { width: 64px; height: 64px; border-radius: 50%; background: var(--exito-suave); color: var(--exito); display: flex; align-items: center; justify-content: center; margin: 4px auto 14px; }
+    .exito-icono .ico { width: 32px; height: 32px; stroke-width: 2.5; }
     .exito p { color: var(--tenue); margin-bottom: 18px; }
-    .modal .btn.ancho { width: 100%; padding: 13px; margin-top: 8px; }
+    .modal .btn.ancho { width: 100%; padding: 13px; margin-top: 8px; font-size: 15px; }
     .btn.whatsapp { background: #1f8f4e; border-color: #1f8f4e; color: #fff; }
+    .btn.whatsapp:hover { background: #1a7a43; }
   </style>
 </head>
 <body>
   <header class="cabecera">
-    <div class="cabecera-fila">
-      <div class="negocio" id="negocio">PROVEEDOR</div>
-      <button class="btn chico" id="btnHistorial" hidden>Mis pedidos</button>
+    <div class="cabecera-interior">
+      <div class="cabecera-fila">
+        <div class="marca"><div class="marca-logo" data-marca-logo></div><div class="negocio marca-nombre" id="negocio" data-marca-nombre>PROVEEDOR</div></div>
+        <button class="btn chico" id="btnHistorial" hidden><svg class="ico" aria-hidden="true"><use href="iconos.svg#reloj"/></svg>Mis pedidos</button>
+      </div>
+      <div class="saludo" id="saludo" hidden><small>Pedido para</small><div class="cliente-nombre" id="clienteNombre"></div></div>
+      <nav class="chips" id="chips" hidden aria-label="Ir a"></nav>
     </div>
-    <div class="cliente-nombre" id="clienteNombre"></div>
   </header>
 
   <main class="contenido" id="contenido">
@@ -141,7 +174,7 @@
   <div class="barra" id="barra">
     <div class="barra-interior">
       <div class="barra-info"><span id="barraDetalle"></span><strong id="barraTotal"></strong></div>
-      <button class="btn primario" id="btnRevisar">Revisar pedido</button>
+      <button class="btn primario" id="btnRevisar">Revisar pedido<svg class="ico" aria-hidden="true"><use href="iconos.svg#derecha"/></svg></button>
     </div>
   </div>
 
@@ -182,7 +215,7 @@
   <!-- Éxito -->
   <div class="modal-fondo" id="modalExito">
     <div class="modal exito">
-      <div class="exito-icono">✓</div>
+      <div class="exito-icono"><svg class="ico" aria-hidden="true"><use href="iconos.svg#check"/></svg></div>
       <h2 id="exitoTitulo">¡Pedido enviado!</h2>
       <p id="exitoTexto"></p>
       <button class="btn whatsapp ancho" id="btnWhatsApp">Avisar por WhatsApp</button>
@@ -193,7 +226,7 @@
   <div class="cajon-fondo" id="historialFondo">
     <div class="cajon">
       <div class="cajon-cab"><h2>Mis pedidos</h2><button class="btn chico" id="btnCerrarHistorial">Cerrar</button></div>
-      <div id="historialContenido"></div>
+      <div id="historialContenido" class="historial"></div>
     </div>
   </div>
 
@@ -220,28 +253,29 @@
 
     document.querySelectorAll('[data-cerrar]').forEach((b) => (b.onclick = () => $(b.dataset.cerrar).classList.remove('visible')));
 
-    function pantallaEstado(titulo, texto) {
-      $('contenido').innerHTML = `<div class="estado-pantalla"><h2>${esc(titulo)}</h2><p>${esc(texto)}</p></div>`;
+    function pantallaEstado(titulo, texto, ico = 'alerta') {
+      $('contenido').innerHTML = `<div class="estado-pantalla"><div class="vacio-icono">${icono(ico, 'grande')}</div><h2>${esc(titulo)}</h2><p>${esc(texto)}</p></div>`;
     }
 
     async function iniciar() {
       if (!db) return pantallaEstado('Falta configurar', 'El sistema aún no está conectado a la base de datos.');
-      if (!token) return pantallaEstado('Link incompleto', 'Pide a tu proveedor el link para hacer pedidos.');
+      if (!token) return pantallaEstado('Link incompleto', 'Pide a tu proveedor el link para hacer pedidos.', 'enlace');
 
       const { data, error } = await db.rpc('cliente_por_token', { p_token: token });
       if (error) return pantallaEstado('No se pudo cargar', mensajeError(error));
-      if (!data) return pantallaEstado('Link no válido', 'Este link ya no funciona. Pide uno nuevo a tu proveedor.');
+      if (!data) return pantallaEstado('Link no válido', 'Este link ya no funciona. Pide uno nuevo a tu proveedor.', 'enlace');
 
       datos = data;
       sucursales = data.sucursales.length ? data.sucursales : [{ id: null, nombre: '' }];
-      $('negocio').textContent = data.negocio.nombre;
+      aplicarMarca({ color: data.negocio.color, logo: data.negocio.logo, nombre: data.negocio.nombre });
       $('clienteNombre').textContent = data.cliente.nombre;
+      $('saludo').hidden = false;
       document.title = `Pedidos · ${data.cliente.nombre}`;
       $('btnHistorial').hidden = false;
       mesVisible = data.fecha_minima.slice(0, 7);
 
       if (!data.productos.length) {
-        return pantallaEstado('Sin productos', 'Tu proveedor todavía no te ha asignado productos.');
+        return pantallaEstado('Sin productos', 'Tu proveedor todavía no te ha asignado productos.', 'paquete');
       }
       await cargarPedidos();
       dibujar();
@@ -259,12 +293,13 @@
       datos.productos.forEach((p, i) => (porCategoria[p.categoria] ||= []).push([p, i]));
 
       const bloques = sucursales.map((s, si) => `
-        <section class="sucursal">
-          ${s.nombre ? `<div class="sucursal-cab"><h3>${esc(s.nombre)}</h3><span class="etiqueta" id="total-${si}">0</span></div>` : ''}
-          ${Object.entries(porCategoria).map(([cat, lista]) => `
+        <section class="sucursal" id="suc-${si}">
+          ${s.nombre ? `<div class="sucursal-cab"><h3>${icono('ubicacion')}${esc(s.nombre)}</h3><span class="etiqueta sin-punto" id="total-${si}">0</span></div>` : ''}
+          ${Object.entries(porCategoria).map(([cat, lista], ci) => `
+            <div class="grupo-cat" id="cat-${si}-${ci}">
             <div class="categoria">${esc(cat)}</div>
             ${lista.map(([p, pi]) => `
-              <div class="producto">
+              <div class="producto" id="fila-${si}-${pi}">
                 <div class="producto-info">
                   <div class="producto-nombre">${esc(p.nombre)}</div>
                   <div class="producto-pres">${esc(textoPresentacion(p))}</div>
@@ -278,20 +313,33 @@
                   <button data-clave="${si}:${pi}" data-paso="1" aria-label="Más" ${tienePrecio(p) ? '' : 'disabled'}>+</button>
                 </div>
               </div>`).join('')}
+            </div>
           `).join('')}
         </section>`).join('');
 
       $('contenido').innerHTML = `
-        <div class="titulo-seccion">1. Fecha de entrega <button class="btn chico" id="btnOtraFecha">Otra fecha</button></div>
+        <div class="titulo-seccion"><h2><span class="n">1</span>Fecha de entrega</h2>
+          <button class="btn chico" id="btnOtraFecha">${icono('calendario')}Otra fecha</button></div>
         <div class="tira-dias" id="tiraDias"></div>
         <div class="fecha-elegida" id="fechaElegida">Elige el día en que quieres recibir tu pedido</div>
         <div id="avisoDia"></div>
         <div id="formulario" class="bloqueado">
-          <div class="titulo-seccion">2. Productos</div>
+          <div class="titulo-seccion"><h2><span class="n">2</span>Productos <small>${esc(datos.productos.length)}</small></h2></div>
           ${bloques}
-          <div class="titulo-seccion">3. Notas (opcional)</div>
+          <div class="titulo-seccion"><h2><span class="n">3</span>Notas <small>opcional</small></h2></div>
           <textarea class="notas" id="notas" maxlength="500" placeholder="Indicaciones para la entrega, cambios, etc."></textarea>
         </div>`;
+
+      // Atajos: por sucursal si hay varias; si no, por categoría
+      const atajos = sucursales.length > 1
+        ? sucursales.map((s, si) => [`suc-${si}`, s.nombre])
+        : Object.keys(porCategoria).map((cat, ci) => [`cat-0-${ci}`, cat]);
+      $('chips').hidden = atajos.length < 2;
+      $('chips').innerHTML = atajos.map(([id, txt]) => `<button data-ir="${esc(id)}">${esc(txt)}</button>`).join('');
+      $('chips').onclick = (e) => {
+        const b = e.target.closest('button[data-ir]');
+        if (b) document.getElementById(b.dataset.ir)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
 
       $('formulario').addEventListener('click', (e) => {
         const b = e.target.closest('button[data-clave]');
@@ -367,11 +415,11 @@
     function elegirFecha(fecha) {
       fechaElegida = fecha;
       dibujarTira();
-      $('fechaElegida').innerHTML = `Entrega: <strong>${esc(fechaLarga(fecha))}</strong>`;
+      $('fechaElegida').innerHTML = `${icono('camion', 'chico')}Entrega: <strong>${esc(fechaLarga(fecha))}</strong>`;
       const existente = pedidoDelDia(fecha);
       if (existente) {
         $('avisoDia').innerHTML = `<div class="aviso">Ya tienes el pedido <strong>#${esc(existente.folio)}</strong> para este día.<br>
-          <button class="btn chico" id="verPedido">Ver mis pedidos</button></div>`;
+          <button class="btn chico" id="verPedido">${icono('reloj')}Ver mis pedidos</button></div>`;
         $('verPedido').onclick = abrirHistorial;
         $('formulario').classList.add('bloqueado');
       } else {
@@ -392,6 +440,7 @@
       const el = $(`num-${si}-${pi}`);
       el.textContent = cantidades[clave];
       el.classList.toggle('activo', cantidades[clave] > 0);
+      $(`fila-${si}-${pi}`)?.classList.toggle('con-cantidad', cantidades[clave] > 0);
       const sub = $(`sub-${si}-${pi}`);
       if (sub) sub.textContent = cantidades[clave] > 0 ? `× ${cantidades[clave]} = ${dinero(cantidades[clave] * datos.productos[pi].precio)}` : '';
       const totalSuc = $(`total-${si}`);
@@ -472,7 +521,7 @@
       if (!fechaElegida || !lineas.length) return;
       const notas = $('notas').value.trim();
       $('revisionContenido').innerHTML = `
-        <div class="resumen-fecha">Entrega: <strong>${esc(fechaLarga(fechaElegida))}</strong></div>
+        <div class="resumen-fecha">${icono('camion')}<span>Entrega: <strong>${esc(fechaLarga(fechaElegida))}</strong></span></div>
         ${htmlLineas(lineas)}
         ${notas ? `<div class="resumen-notas">Notas: ${esc(notas)}</div>` : ''}
         <div class="resumen-total"><span>Total <small>IVA incluido</small></span><span>${esc(dinero(totalDe(lineas)))}</span></div>`;
@@ -528,10 +577,10 @@
     // ─────────── Historial ───────────
     async function abrirHistorial() {
       $('historialFondo').classList.add('visible');
-      $('historialContenido').innerHTML = '<div class="vacio">Cargando…</div>';
+      $('historialContenido').innerHTML = esqueleto(4, 22);
       await cargarPedidos();
       if (!pedidos.length) {
-        $('historialContenido').innerHTML = '<div class="vacio">Aún no tienes pedidos recientes.</div>';
+        $('historialContenido').innerHTML = estadoVacio('bandeja', 'Aún no tienes pedidos recientes');
         return;
       }
       $('historialContenido').innerHTML = pedidos.map((p) => {
@@ -553,6 +602,8 @@
             `).join('')}
             ${p.total != null ? `<div class="tarjeta-total"><span>Total</span><span>${esc(dinero(p.total))}</span></div>` : ''}
             ${p.notas ? `<div class="tarjeta-notas">${esc(p.notas)}</div>` : ''}
+            <div class="tarjeta-acciones"><a class="btn chico" target="_blank" rel="noopener"
+              href="remision.html?t=${encodeURIComponent(token)}&folio=${encodeURIComponent(p.folio)}">${icono('documento')}Descargar nota</a></div>
           </div>`;
       }).join('');
     }

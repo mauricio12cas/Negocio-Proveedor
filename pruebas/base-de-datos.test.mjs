@@ -244,6 +244,64 @@ await prueba('el público no puede usar funciones internas', async () => {
   await falla(`select es_admin()`, [], /permission denied/);
 });
 
+await prueba('el cliente recibe la marca y los datos del negocio, sin costos', async () => {
+  await como('authenticated', ADMIN);
+  await db.query(`update ajustes set color_acento = '#1d4ed8', logo = 'data:image/png;base64,AAAA', rfc = 'XAXX010101000' where id = 1`);
+  await como('anon');
+  const r = (await uno(`select cliente_por_token('tokencentro') as r`)).r;
+  assert.equal(r.negocio.color, '#1d4ed8');
+  assert.equal(r.negocio.logo, 'data:image/png;base64,AAAA');
+  assert.equal(r.negocio.rfc, 'XAXX010101000');
+  assert.match(r.negocio.leyenda_remision, /IVA incluido/);
+  assert.doesNotMatch(JSON.stringify(r), /costo|precio_base|token/);
+  await como('authenticated', ADMIN);
+  await db.query(`update ajustes set color_acento = '#0f766e', logo = null, rfc = null where id = 1`);
+});
+
+await prueba('ajustes rechaza un color o un logo inválidos', async () => {
+  await como('authenticated', ADMIN);
+  await falla(`update ajustes set color_acento = 'rojo' where id = 1`, [], /check constraint/);
+  await falla(`update ajustes set logo = 'https://otro.sitio/logo.png' where id = 1`, [], /check constraint/);
+  await falla(`update ajustes set logo = 'data:text/html;base64,PHNjcmlwdD4=' where id = 1`, [], /check constraint/);
+});
+
+await prueba('estadisticas_ventas: solo para el administrador', async () => {
+  await como('anon');
+  await falla(`select estadisticas_ventas(current_date, current_date)`, [], /permission denied/);
+  await como('authenticated', OTRO);
+  await falla(`select estadisticas_ventas(current_date, current_date)`, [], /Solo el administrador/);
+});
+
+await prueba('estadisticas_ventas: totales, días vacíos, periodo anterior y tops', async () => {
+  await como('authenticated', ADMIN);
+  await db.exec(`delete from pedido_lineas; delete from pedidos;`);
+  const desde = sumarDias(fechaMin, 10);
+  const hasta = sumarDias(desde, 6);           // 7 días
+  const pedir = async (token, f, ls) => {
+    await como('anon');
+    await db.query(`select crear_pedido($1, $2, $3)`, [token, f, lineas(ls)]);
+  };
+  await pedir('tokencentro', desde, [{ producto_id: P1, cantidad: 2 }]);                        // 901
+  await pedir('tokencentro', sumarDias(desde, 2), [{ producto_id: P2, cantidad: 1 }]);          // 380
+  await pedir('tokennorte', sumarDias(desde, 2), [{ producto_id: P3, sucursal_id: SUC_ROMA, cantidad: 4 }]); // 220
+  await pedir('tokencentro', sumarDias(desde, -3), [{ producto_id: P2, cantidad: 2 }]);         // 760, periodo anterior
+  await pedir('tokencentro', sumarDias(desde, 4), [{ producto_id: P1, cantidad: 10 }]);         // cancelado
+  await como('authenticated', ADMIN);
+  await db.query(`update pedidos set estado = 'cancelado' where fecha_entrega = $1`, [sumarDias(desde, 4)]);
+
+  const r = (await uno(`select estadisticas_ventas($1, $2) as r`, [desde, hasta])).r;
+  assert.equal(r.por_dia.length, 7);
+  assert.deepEqual(r.por_dia.map((d) => Number(d.total)), [901, 0, 600, 0, 0, 0, 0]);
+  assert.deepEqual(r.por_dia.map((d) => d.pedidos), [1, 0, 2, 0, 0, 0, 0]);
+  assert.equal(r.por_dia[0].fecha, desde);
+  assert.deepEqual([Number(r.totales.total), r.totales.pedidos, Number(r.totales.ticket_promedio)], [1501, 3, 500.33]);
+  assert.deepEqual([Number(r.periodo_anterior.total), r.periodo_anterior.pedidos], [760, 1]);
+  assert.deepEqual(r.top_clientes.map((c) => [c.nombre, Number(c.total), c.pedidos]), [['Café Centro', 1281, 2], ['Cocina Norte', 220, 1]]);
+  assert.deepEqual(r.top_productos.map((p) => [p.nombre, Number(p.total), p.cantidad]),
+    [['Frijol negro', 901, 2], ['Aceite vegetal', 380, 1], ['Cloro', 220, 4]]);
+  await falla(`select estadisticas_ventas($1, $2)`, [hasta, desde], /Periodo inválido/);
+});
+
 if (fallas) {
   console.log(`\n${fallas} prueba(s) fallaron`);
   process.exit(1);
