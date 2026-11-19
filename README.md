@@ -16,7 +16,7 @@ Reglas: un pedido por cliente por día; no se puede pedir para el mismo día; co
 
 ### Puesta en marcha
 
-> **Estado actual:** el proyecto de Supabase **«pedidos-proveedor»** ya está creado, con la base de datos instalada, y `app/config.js` ya apunta a él. Solo faltan los pasos 3, 4, 6 y 7.
+> **Estado actual:** el proyecto de Supabase **«pedidos-proveedor»** ya está creado, con la base de datos instalada, y `app/config.js` ya apunta a él. Tu usuario ya es administrador. Solo falta publicar (paso 6) y empezar a cargar datos (paso 7).
 
 1. **Crea un proyecto en [Supabase](https://supabase.com)** (plan gratuito).
 2. En **SQL Editor**, pega y ejecuta el contenido de `supabase/migrations/20261119000000_esquema_inicial.sql`.
@@ -26,7 +26,7 @@ Reglas: un pedido por cliente por día; no se puede pedir para el mismo día; co
    insert into administradores (user_id) values ('ID-DE-TU-USUARIO');
    ```
 5. En **Project Settings → API**, copia la *Project URL* y la *anon public key* a `app/config.js`.
-6. Publica la carpeta `app/` en cualquier hosting de archivos estáticos (por ejemplo, Netlify o Cloudflare Pages arrastrando la carpeta, o GitHub Pages).
+6. Publica la carpeta `app/`. El repositorio ya lo hace solo con GitHub Pages (`.github/workflows/publicar-app.yml`) cada vez que hay cambios en `main`: activa una vez **Settings → Pages → Source: GitHub Actions**. El panel queda en `https://mauricio12cas.github.io/Negocio-Proveedor/admin.html`.
 7. Entra a `admin.html`: agrega productos en **Catálogo**, crea tus **Clientes**, marca qué productos puede pedir cada uno y envíales su link.
 
 ### Seguridad
