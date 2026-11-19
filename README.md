@@ -16,6 +16,8 @@ Reglas: un pedido por cliente por día; no se puede pedir para el mismo día; co
 
 ### Puesta en marcha
 
+> **Estado actual:** el proyecto de Supabase **«pedidos-proveedor»** ya está creado, con la base de datos instalada, y `app/config.js` ya apunta a él. Solo faltan los pasos 3, 4, 6 y 7.
+
 1. **Crea un proyecto en [Supabase](https://supabase.com)** (plan gratuito).
 2. En **SQL Editor**, pega y ejecuta el contenido de `supabase/migrations/20261119000000_esquema_inicial.sql`.
 3. En **Authentication → Users → Add user**, crea tu usuario con correo y contraseña. Luego, en **Authentication → Sign In / Providers**, desactiva *Allow new users to sign up* para que nadie más pueda registrarse.
