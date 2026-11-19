@@ -40,6 +40,16 @@
       .principal { margin-left: 0; padding: 18px 14px 60px; }
     }
 
+    /* Inicio */
+    .bloque { margin-top: 22px; }
+    .bloque h2 { font-size: 16px; margin-bottom: 10px; }
+    .lista { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); }
+    .lista-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--borde); font-size: 14px; }
+    .lista-fila:first-child { border-top: 0; }
+    .lista-fila small { color: var(--tenue); display: block; }
+    .dos-bloques { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    @media (max-width: 860px) { .dos-bloques { grid-template-columns: 1fr; } }
+
     /* Pedidos */
     .pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
     .pedido { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px; }
@@ -51,6 +61,8 @@
     .linea { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 3px 0; border-bottom: 1px dashed var(--borde); }
     .linea:last-child { border-bottom: 0; }
     .linea small { color: var(--tenue); }
+    .linea .importe { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .pedido-total { display: flex; justify-content: space-between; font-weight: 800; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--borde); }
     .pedido-notas { font-size: 13px; background: var(--aviso-suave); color: var(--aviso); border-radius: 8px; padding: 8px 10px; margin-top: 10px; white-space: pre-wrap; }
     .pedido-pie { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--borde); }
     .pedido-pie select { width: auto; }
@@ -59,10 +71,12 @@
     .tabla-caja { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th { text-align: left; font-size: 12px; color: var(--tenue); font-weight: 700; padding: 10px 12px; background: var(--superficie-2); white-space: nowrap; }
-    td { padding: 10px 12px; border-top: 1px solid var(--borde); vertical-align: top; }
-    td.num { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    th.num, td.num { text-align: right; }
+    td { padding: 10px 12px; border-top: 1px solid var(--borde); vertical-align: middle; }
+    td.num { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
     td small { color: var(--tenue); }
     tr.inactivo td { color: var(--tenue); }
+    .margen-bajo { color: var(--peligro); }
 
     /* Clientes */
     .clientes { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
@@ -75,16 +89,29 @@
     .link-caja code { flex: 1; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tenue); }
     .cliente-acciones { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
 
+    /* Asistente de cliente */
+    .modal.ancho { max-width: 860px; }
+    .paso { display: none; }
+    .paso.actual { display: block; }
     .lista-editable .fila { display: flex; gap: 6px; margin-bottom: 6px; }
     .lista-editable .fila input { flex: 1; }
-    .casillas { border: 1px solid var(--borde); border-radius: 10px; max-height: 300px; overflow-y: auto; padding: 4px 10px 10px; }
-    .casillas .cat { font-size: 12px; font-weight: 700; color: var(--tenue); text-transform: uppercase; letter-spacing: .06em; margin: 10px 0 4px; display: flex; justify-content: space-between; }
-    .casillas .cat button { border: 0; background: none; color: var(--resalte); font-weight: 700; font-size: 12px; }
-    .casillas label { display: flex; gap: 8px; align-items: center; padding: 4px 0; font-size: 14px; }
-    .casillas label small { color: var(--tenue); }
     .dos-columnas { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
     @media (max-width: 560px) { .dos-columnas { grid-template-columns: 1fr; } }
     .interruptor { display: flex; gap: 8px; align-items: center; font-weight: 600; margin-bottom: 14px; }
+    .herramientas { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+    .herramientas .entrada { width: auto; }
+    .herramientas .grupo { display: flex; gap: 4px; align-items: center; }
+    .tabla-precios { max-height: 46vh; overflow-y: auto; border: 1px solid var(--borde); border-radius: 10px; }
+    .tabla-precios th { position: sticky; top: 0; z-index: 1; }
+    .tabla-precios td { padding: 7px 10px; }
+    .tabla-precios input[type="number"] { width: 110px; text-align: right; padding: 7px 9px; }
+    .tabla-precios tr.sin-marcar td { color: var(--tenue); }
+    .contador { font-size: 13px; color: var(--tenue); margin-top: 8px; }
+    .error-paso { color: var(--peligro); font-size: 14px; margin-top: 10px; }
+    .listo { text-align: center; padding: 10px 0; }
+    .listo .exito-icono { width: 56px; height: 56px; border-radius: 50%; background: var(--resalte-suave); color: var(--resalte); font-size: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+    .listo p { color: var(--tenue); margin-bottom: 14px; }
+    .listo .link-caja { text-align: left; margin-bottom: 12px; }
 
     .compras-titulo { display: none; }
     @media print {
@@ -114,7 +141,8 @@
     <aside class="lateral">
       <div class="negocio" id="panelNegocio">PROVEEDOR</div>
       <nav class="menu" id="menu">
-        <button data-vista="pedidos" class="activo">Pedidos</button>
+        <button data-vista="inicio" class="activo">Inicio</button>
+        <button data-vista="pedidos">Pedidos</button>
         <button data-vista="compras">Por comprar</button>
         <button data-vista="clientes">Clientes</button>
         <button data-vista="catalogo">Catálogo</button>
@@ -125,8 +153,21 @@
 
     <main class="principal">
 
+      <!-- Inicio -->
+      <section class="vista activa" id="vista-inicio">
+        <div class="encabezado">
+          <div><h1>Inicio</h1><p id="inicioFecha"></p></div>
+          <button class="btn" id="btnRecargarInicio">Actualizar</button>
+        </div>
+        <div class="metricas" id="metricas"></div>
+        <div class="dos-bloques">
+          <div class="bloque"><h2>Clientes que no han pedido</h2><div id="listaInactivos"></div></div>
+          <div class="bloque"><h2>Alertas</h2><div id="listaAlertas"></div></div>
+        </div>
+      </section>
+
       <!-- Pedidos -->
-      <section class="vista activa" id="vista-pedidos">
+      <section class="vista" id="vista-pedidos">
         <div class="encabezado">
           <div><h1>Pedidos</h1><p>Confirma los pedidos y actualiza su estado.</p></div>
           <button class="btn" id="btnRecargarPedidos">Actualizar</button>
@@ -157,9 +198,7 @@
           <div><h1>Por comprar</h1><p>Suma de todos los pedidos de un día de entrega (sin cancelados).</p></div>
           <button class="btn" onclick="window.print()">Imprimir</button>
         </div>
-        <div class="filtros">
-          <input type="date" class="entrada" id="comprasDia" />
-        </div>
+        <div class="filtros"><input type="date" class="entrada" id="comprasDia" /></div>
         <div class="compras-titulo" id="comprasTitulo"></div>
         <div id="listaCompras"></div>
       </section>
@@ -167,7 +206,7 @@
       <!-- Clientes -->
       <section class="vista" id="vista-clientes">
         <div class="encabezado">
-          <div><h1>Clientes</h1><p>Cada cliente pide desde su propio link. No compartas el link de un cliente con otro.</p></div>
+          <div><h1>Clientes</h1><p>Cada cliente pide desde su propio link, con sus productos y precios.</p></div>
           <button class="btn primario" id="btnNuevoCliente">+ Nuevo cliente</button>
         </div>
         <div id="listaClientes"></div>
@@ -176,7 +215,7 @@
       <!-- Catálogo -->
       <section class="vista" id="vista-catalogo">
         <div class="encabezado">
-          <div><h1>Catálogo</h1><p>Productos que puedes asignar a tus clientes.</p></div>
+          <div><h1>Catálogo general</h1><p>Todos tus productos. El precio base se propone al asignarlos a un cliente.</p></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn" id="btnImportar">Pegar desde Excel</button>
             <button class="btn primario" id="btnNuevoProducto">+ Nuevo producto</button>
@@ -188,7 +227,7 @@
 
       <!-- Ajustes -->
       <section class="vista" id="vista-ajustes">
-        <div class="encabezado"><div><h1>Ajustes</h1><p>Datos que ven tus clientes y reglas para pedir.</p></div></div>
+        <div class="encabezado"><div><h1>Ajustes</h1><p>Datos que ven tus clientes y reglas del negocio.</p></div></div>
         <form id="formAjustes" style="max-width:480px">
           <label class="campo"><span>Nombre del negocio</span><input id="ajNombre" maxlength="60" required /></label>
           <label class="campo"><span>WhatsApp para recibir avisos de pedido</span>
@@ -197,50 +236,96 @@
           </label>
           <label class="campo"><span>Hora de corte</span>
             <input id="ajCorte" type="time" />
-            <small>Los pedidos hechos después de esta hora se entregan un día después. Vacío = sin hora de corte (siempre se puede pedir para mañana).</small>
+            <small>Los pedidos hechos después de esta hora se entregan un día después. Vacío = siempre se puede pedir para mañana.</small>
           </label>
+          <div class="dos-columnas">
+            <label class="campo"><span>Margen mínimo (%)</span>
+              <input id="ajMargen" type="number" min="0" max="100" step="0.5" placeholder="Ej. 15" />
+              <small>Te avisa si un precio deja menos margen.</small>
+            </label>
+            <label class="campo"><span>Días sin pedir para avisarte</span>
+              <input id="ajInactividad" type="number" min="1" max="365" step="1" required />
+              <small>Para la lista de Inicio.</small>
+            </label>
+          </div>
           <button class="btn primario" type="submit">Guardar ajustes</button>
         </form>
       </section>
     </main>
   </div>
 
-  <!-- Modal cliente -->
+  <!-- Asistente de cliente -->
   <div class="modal-fondo" id="modalCliente">
-    <form class="modal" id="formCliente">
+    <form class="modal ancho" id="formCliente" novalidate>
       <h2 id="tituloCliente">Nuevo cliente</h2>
-      <label class="interruptor"><input type="checkbox" id="clActivo" checked /> Cliente activo (puede hacer pedidos)</label>
-      <label class="campo"><span>Nombre</span><input id="clNombre" maxlength="80" required /></label>
-      <div class="dos-columnas">
-        <label class="campo"><span>Tipo</span>
-          <select id="clTipo">
-            <option value="">—</option><option>Restaurante</option><option>Cafetería</option>
-            <option>Dark kitchen</option><option>Food truck</option><option>Público en general</option><option>Otro</option>
-          </select>
-        </label>
-        <label class="campo"><span>Teléfono</span><input id="clTelefono" inputmode="tel" maxlength="30" /></label>
-      </div>
-      <label class="campo"><span>Dirección de entrega</span><input id="clDireccion" maxlength="200" /></label>
-      <div class="dos-columnas">
-        <label class="campo"><span>Horario de recepción</span><input id="clHorario" maxlength="60" placeholder="Ej. 7:00 a 10:00" /></label>
-        <label class="campo"><span>Instrucciones de entrega</span><input id="clInstrucciones" maxlength="200" placeholder="Ej. puerta trasera" /></label>
+      <nav class="pasos" id="pasosCliente">
+        <button type="button" data-ir="1"><span>PASO 1</span>Datos</button>
+        <button type="button" data-ir="2"><span>PASO 2</span>Productos y precios</button>
+        <button type="button" data-ir="3"><span>PASO 3</span>Sucursales</button>
+        <button type="button" data-ir="4"><span>PASO 4</span>Link</button>
+      </nav>
+
+      <div class="paso" data-paso="1">
+        <label class="interruptor"><input type="checkbox" id="clActivo" checked /> Cliente activo (puede hacer pedidos)</label>
+        <label class="campo"><span>Nombre</span><input id="clNombre" maxlength="80" /></label>
+        <div class="dos-columnas">
+          <label class="campo"><span>Tipo</span>
+            <select id="clTipo">
+              <option value="">—</option><option>Restaurante</option><option>Cafetería</option>
+              <option>Dark kitchen</option><option>Food truck</option><option>Público en general</option><option>Otro</option>
+            </select>
+          </label>
+          <label class="campo"><span>Teléfono (WhatsApp)</span><input id="clTelefono" inputmode="tel" maxlength="30" /></label>
+        </div>
+        <label class="campo"><span>Dirección de entrega</span><input id="clDireccion" maxlength="200" /></label>
+        <div class="dos-columnas">
+          <label class="campo"><span>Horario de recepción</span><input id="clHorario" maxlength="60" placeholder="Ej. 7:00 a 10:00" /></label>
+          <label class="campo"><span>Instrucciones de entrega</span><input id="clInstrucciones" maxlength="200" placeholder="Ej. puerta trasera" /></label>
+        </div>
       </div>
 
-      <div class="campo">
-        <span>Sucursales (opcional: solo si cada sucursal pide por separado)</span>
+      <div class="paso" data-paso="2">
+        <div class="herramientas">
+          <input class="entrada" id="ppBuscar" placeholder="Buscar producto…" />
+          <select class="entrada" id="ppCategoria"><option value="">Todas las categorías</option></select>
+          <button type="button" class="btn chico" id="ppMarcar">Marcar visibles</button>
+          <span class="grupo">
+            <input class="entrada" id="ppPorcentaje" type="number" step="0.5" placeholder="%" style="width:72px" aria-label="Porcentaje de ajuste" />
+            <button type="button" class="btn chico" id="ppAjustar">Ajustar precios</button>
+          </span>
+          <span class="grupo">
+            <select class="entrada" id="ppCopiar"><option value="">Copiar de otro cliente…</option></select>
+          </span>
+        </div>
+        <div class="tabla-precios" id="ppTabla"></div>
+        <div class="contador" id="ppContador"></div>
+      </div>
+
+      <div class="paso" data-paso="3">
+        <p style="color:var(--tenue);font-size:14px;margin-bottom:12px">Agrega sucursales solo si cada una pide y recibe por separado. Todas usan los mismos precios.</p>
         <div class="lista-editable" id="clSucursales"></div>
         <button type="button" class="btn chico" id="btnAgregarSucursal">+ Agregar sucursal</button>
       </div>
 
-      <div class="campo">
-        <span>Productos que puede pedir</span>
-        <div class="casillas" id="clProductos"></div>
+      <div class="paso" data-paso="4">
+        <div class="listo">
+          <div class="exito-icono">✓</div>
+          <h3 id="listoTitulo"></h3>
+          <p id="listoTexto"></p>
+          <div class="link-caja"><code id="listoLink"></code><button type="button" class="btn chico" id="listoCopiar">Copiar link</button></div>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+            <button type="button" class="btn" id="listoWhatsApp">Enviar por WhatsApp</button>
+            <button type="button" class="btn peligro" id="btnNuevoLink">Generar link nuevo</button>
+          </div>
+        </div>
       </div>
 
+      <div class="error-paso" id="errorPaso"></div>
       <div class="modal-acciones">
-        <button type="button" class="btn peligro" id="btnNuevoLink" hidden>Generar link nuevo</button>
+        <button type="button" class="btn" id="btnAtras">Atrás</button>
         <span style="flex:1"></span>
-        <button type="button" class="btn" data-cerrar="modalCliente">Cancelar</button>
+        <button type="button" class="btn" id="btnCancelarCliente">Cancelar</button>
+        <button type="button" class="btn" id="btnSiguiente">Siguiente</button>
         <button type="submit" class="btn primario" id="btnGuardarCliente">Guardar</button>
       </div>
     </form>
@@ -262,6 +347,11 @@
         </label>
       </div>
       <label class="campo"><span>Presentación</span><input id="prPresentacion" maxlength="60" placeholder="Ej. Costal 25 kg" /></label>
+      <div class="dos-columnas">
+        <label class="campo"><span>Precio base (con IVA)</span><input id="prPrecio" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+        <label class="campo"><span>Costo (opcional)</span><input id="prCosto" type="number" min="0" step="0.01" placeholder="0.00" /></label>
+      </div>
+      <div class="contador" id="prMargen"></div>
       <datalist id="categorias"></datalist>
       <div class="modal-acciones">
         <button type="button" class="btn" data-cerrar="modalProducto">Cancelar</button>
@@ -276,10 +366,10 @@
       <h2>Pegar productos desde Excel</h2>
       <p style="color:var(--tenue);font-size:14px;margin-bottom:12px">
         Copia en Excel o Google Sheets las columnas <strong>Nombre</strong>, <strong>Categoría</strong>,
-        <strong>Presentación</strong> y <strong>Unidad</strong> (en ese orden) y pégalas aquí. Unidades válidas:
-        pieza, kilo, litro, caja, costal, bulto, paquete.
+        <strong>Presentación</strong>, <strong>Unidad</strong>, <strong>Precio base</strong> y <strong>Costo</strong>
+        (en ese orden; las dos últimas son opcionales) y pégalas aquí. Unidades válidas: pieza, kilo, litro, caja, costal, bulto, paquete.
       </p>
-      <textarea class="entrada" id="textoImportar" rows="10" placeholder="Frijol negro&#9;Granos&#9;Costal 25 kg&#9;costal"></textarea>
+      <textarea class="entrada" id="textoImportar" rows="10" placeholder="Frijol negro&#9;Granos&#9;Costal 25 kg&#9;costal&#9;520&#9;430"></textarea>
       <div id="vistaImportar" style="font-size:14px;color:var(--tenue);margin-top:8px"></div>
       <div class="modal-acciones">
         <button type="button" class="btn" data-cerrar="modalImportar">Cancelar</button>
@@ -297,13 +387,24 @@
     const db = conectarSupabase();
     const $ = (id) => document.getElementById(id);
 
+    let ajustes = { margen_minimo: null, dias_inactividad: 7 };
     let productos = [];
     let clientes = [];
-    let editandoCliente = null;
     let editandoProducto = null;
     let importables = [];
 
     const urlCliente = (token) => new URL(`index.html?c=${token}`, location.href).href;
+    const numero = (v) => {
+      const n = parseFloat(String(v ?? '').replace(/[$,\s]/g, ''));
+      return Number.isFinite(n) ? n : null;
+    };
+    const textoMargen = (m) => (m === null ? '—' : `${m.toFixed(1)} %`);
+    const esMargenBajo = (m) => m !== null && ajustes.margen_minimo !== null && m < Number(ajustes.margen_minimo);
+
+    function abrirWhatsApp(telefono, texto) {
+      const tel = (telefono || '').replace(/\D/g, '');
+      window.open(`https://wa.me/${tel.length === 10 ? '521' + tel : tel}?text=${encodeURIComponent(texto)}`, '_blank');
+    }
 
     // ─────────── Acceso ───────────
     async function revisarSesion() {
@@ -336,24 +437,111 @@
       }
       $('pantallaAcceso').style.display = 'none';
       $('pantallaPanel').style.display = 'block';
-      await Promise.all([cargarAjustes(), cargarProductos(), cargarClientes()]);
+      await cargarAjustes();
+      await Promise.all([cargarProductos(), cargarClientes()]);
       $('comprasDia').value = sumarDias(hoyMX(), 1);
-      cargarPedidos();
+      cargarInicio();
     }
 
     $('btnSalir').onclick = async () => { await db.auth.signOut(); location.reload(); };
 
     // ─────────── Navegación ───────────
+    function irA(vista) {
+      document.querySelectorAll('#menu button').forEach((x) => x.classList.toggle('activo', x.dataset.vista === vista));
+      document.querySelectorAll('.vista').forEach((v) => v.classList.toggle('activa', v.id === `vista-${vista}`));
+      if (vista === 'inicio') cargarInicio();
+      if (vista === 'pedidos') cargarPedidos();
+      if (vista === 'compras') cargarCompras();
+    }
     $('menu').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-vista]');
-      if (!b) return;
-      document.querySelectorAll('#menu button').forEach((x) => x.classList.toggle('activo', x === b));
-      document.querySelectorAll('.vista').forEach((v) => v.classList.toggle('activa', v.id === `vista-${b.dataset.vista}`));
-      if (b.dataset.vista === 'pedidos') cargarPedidos();
-      if (b.dataset.vista === 'compras') cargarCompras();
+      if (b) irA(b.dataset.vista);
     });
-
     document.querySelectorAll('[data-cerrar]').forEach((b) => (b.onclick = () => $(b.dataset.cerrar).classList.remove('visible')));
+
+    // ─────────── Inicio ───────────
+    $('btnRecargarInicio').onclick = cargarInicio;
+
+    async function cargarInicio() {
+      const hoy = hoyMX();
+      const manana = sumarDias(hoy, 1);
+      const enSiete = sumarDias(hoy, 7);
+      $('inicioFecha').textContent = `Hoy es ${fechaLarga(hoy).toLowerCase()}.`;
+      $('metricas').innerHTML = '<div class="vacio">Cargando…</div>';
+
+      const [rPedidos, rResumen, rAsignados] = await Promise.all([
+        db.from('pedidos').select('id, fecha_entrega, estado, pedido_lineas(importe)').gte('fecha_entrega', hoy).neq('estado', 'cancelado'),
+        db.from('resumen_clientes').select('*').order('nombre'),
+        ajustes.margen_minimo !== null
+          ? db.from('cliente_productos').select('precio, clientes(nombre), productos(nombre, costo)')
+          : Promise.resolve({ data: [] }),
+      ]);
+      if (rPedidos.error || rResumen.error) {
+        $('metricas').innerHTML = `<div class="vacio">${esc(mensajeError(rPedidos.error || rResumen.error))}</div>`;
+        return;
+      }
+
+      const total = (ps) => ps.reduce((a, p) => a + p.pedido_lineas.reduce((b, l) => b + Number(l.importe || 0), 0), 0);
+      const porConfirmar = rPedidos.data.filter((p) => p.estado === 'recibido');
+      const deManana = rPedidos.data.filter((p) => p.fecha_entrega === manana);
+      const semana = rPedidos.data.filter((p) => p.fecha_entrega <= enSiete);
+
+      $('metricas').innerHTML = `
+        <button class="metrica ${porConfirmar.length ? 'alerta' : ''}" id="mPorConfirmar">
+          <div class="rotulo">Por confirmar</div><div class="valor">${porConfirmar.length}</div>
+          <div class="detalle">${porConfirmar.length ? 'Toca para revisarlos' : 'Todo al día'}</div></button>
+        <div class="metrica"><div class="rotulo">Entregas de mañana</div><div class="valor">${deManana.length}</div>
+          <div class="detalle">${esc(dinero(total(deManana)))}</div></div>
+        <div class="metrica"><div class="rotulo">Por entregar en 7 días</div><div class="valor">${esc(dinero(total(semana)))}</div>
+          <div class="detalle">${semana.length} ${semana.length === 1 ? 'pedido' : 'pedidos'}</div></div>`;
+      $('mPorConfirmar').onclick = () => {
+        $('filtroPeriodo').value = 'proximos';
+        $('filtroDia').hidden = true;
+        $('filtroCliente').value = '';
+        $('filtroEstado').value = 'recibido';
+        irA('pedidos');
+      };
+
+      // Clientes que no han pedido
+      const dias = Number(ajustes.dias_inactividad) || 7;
+      const limite = Date.now() - dias * 86400000;
+      const inactivos = rResumen.data.filter((c) => c.activo && (!c.ultimo_pedido || new Date(c.ultimo_pedido).getTime() < limite));
+      $('listaInactivos').innerHTML = inactivos.length
+        ? `<div class="lista">${inactivos.map((c) => `
+            <div class="lista-fila">
+              <div>${esc(c.nombre)}<small>${c.ultimo_pedido
+                ? `Último pedido hace ${Math.floor((Date.now() - new Date(c.ultimo_pedido).getTime()) / 86400000)} días`
+                : 'Nunca ha pedido'}</small></div>
+              <button class="btn chico" data-recordar="${esc(c.id)}">Escribirle</button>
+            </div>`).join('')}</div>`
+        : `<div class="lista"><div class="lista-fila"><span>Todos tus clientes activos pidieron en los últimos ${dias} días.</span></div></div>`;
+
+      // Alertas
+      const alertas = [];
+      rResumen.data.filter((c) => c.activo && c.productos_sin_precio > 0).forEach((c) =>
+        alertas.push(`<div class="lista-fila"><div>${esc(c.nombre)}<small>${c.productos_sin_precio} ${c.productos_sin_precio === 1 ? 'producto' : 'productos'} sin precio: no los puede pedir</small></div>
+          <button class="btn chico" data-editar-cliente="${esc(c.id)}">Corregir</button></div>`));
+      rResumen.data.filter((c) => c.activo && c.productos === 0).forEach((c) =>
+        alertas.push(`<div class="lista-fila"><div>${esc(c.nombre)}<small>No tiene productos asignados</small></div>
+          <button class="btn chico" data-editar-cliente="${esc(c.id)}">Asignar</button></div>`));
+      (rAsignados.data || []).forEach((a) => {
+        const m = margen(a.precio, a.productos?.costo);
+        if (esMargenBajo(m)) {
+          alertas.push(`<div class="lista-fila"><div>${esc(a.productos.nombre)} · ${esc(a.clientes?.nombre)}
+            <small class="margen-bajo">Margen ${esc(textoMargen(m))} (mínimo ${esc(ajustes.margen_minimo)} %)</small></div></div>`);
+        }
+      });
+      $('listaAlertas').innerHTML = `<div class="lista">${alertas.length ? alertas.join('') : '<div class="lista-fila"><span>Sin alertas.</span></div>'}</div>`;
+    }
+
+    $('vista-inicio').addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      const c = clientes.find((x) => x.id === (b.dataset.recordar || b.dataset.editarCliente));
+      if (!c) return;
+      if (b.dataset.recordar) abrirWhatsApp(c.telefono, `Hola, ¿te preparo tu pedido? Puedes hacerlo aquí: ${urlCliente(c.token)}`);
+      else abrirCliente(c, 2);
+    });
 
     // ─────────── Pedidos ───────────
     $('filtroPeriodo').onchange = () => {
@@ -367,7 +555,7 @@
     async function cargarPedidos() {
       $('listaPedidos').innerHTML = '<div class="vacio">Cargando…</div>';
       let q = db.from('pedidos')
-        .select('id, folio, fecha_entrega, estado, notas, creado, clientes(nombre, direccion, horario_recepcion, instrucciones), pedido_lineas(sucursal_nombre, producto_nombre, presentacion, unidad, cantidad)')
+        .select('id, folio, fecha_entrega, estado, notas, creado, clientes(nombre, direccion, horario_recepcion, instrucciones), pedido_lineas(sucursal_nombre, producto_nombre, presentacion, unidad, cantidad, precio_unitario, importe)')
         .limit(300);
       const periodo = $('filtroPeriodo').value;
       if (periodo === 'proximos') q = q.gte('fecha_entrega', hoyMX()).order('fecha_entrega').order('folio');
@@ -384,6 +572,7 @@
         const porSuc = {};
         p.pedido_lineas.sort((a, b) => a.producto_nombre.localeCompare(b.producto_nombre))
           .forEach((l) => (porSuc[l.sucursal_nombre] ||= []).push(l));
+        const total = p.pedido_lineas.reduce((a, l) => a + Number(l.importe || 0), 0);
         const c = p.clientes || {};
         const datosEntrega = [c.direccion, c.horario_recepcion, c.instrucciones].filter(Boolean).join(' · ');
         return `
@@ -398,8 +587,11 @@
             </div>
             ${Object.entries(porSuc).map(([suc, ls]) => `
               ${suc ? `<div class="pedido-suc">${esc(suc)}</div>` : '<div style="height:8px"></div>'}
-              ${ls.map((l) => `<div class="linea"><span>${esc(l.producto_nombre)} <small>${esc(textoPresentacion(l))}</small></span><strong>${esc(l.cantidad)}</strong></div>`).join('')}
+              ${ls.map((l) => `<div class="linea">
+                <span><strong>${esc(l.cantidad)}</strong> × ${esc(l.producto_nombre)} <small>${esc(textoPresentacion(l))}${l.precio_unitario != null ? ` · ${esc(dinero(l.precio_unitario))}` : ''}</small></span>
+                <span class="importe">${l.importe != null ? esc(dinero(l.importe)) : ''}</span></div>`).join('')}
             `).join('')}
+            ${total ? `<div class="pedido-total"><span>Total</span><span>${esc(dinero(total))}</span></div>` : ''}
             ${p.notas ? `<div class="pedido-notas">${esc(p.notas)}</div>` : ''}
             <div class="pedido-pie">
               <span class="pedido-sub">Recibido ${esc(new Date(p.creado).toLocaleString('es-MX', { timeZone: ZONA_HORARIA, dateStyle: 'short', timeStyle: 'short' }))}</span>
@@ -447,7 +639,7 @@
       const filas = Object.values(totales).sort((a, b) => a.producto_nombre.localeCompare(b.producto_nombre));
       $('listaCompras').innerHTML = `
         <div class="tabla-caja"><table>
-          <thead><tr><th>Producto</th><th>Presentación</th><th style="text-align:right">Total</th><th>Quién lo pidió</th></tr></thead>
+          <thead><tr><th>Producto</th><th>Presentación</th><th class="num">Total</th><th>Quién lo pidió</th></tr></thead>
           <tbody>${filas.map((t) => `
             <tr><td>${esc(t.producto_nombre)}</td><td>${esc(textoPresentacion(t))}</td>
             <td class="num">${esc(t.total)}</td><td><small>${t.detalle.map(esc).join('<br>')}</small></td></tr>`).join('')}
@@ -469,14 +661,19 @@
       if (!productos.length) { $('listaProductos').innerHTML = '<div class="vacio">Aún no hay productos. Agrega uno o pégalos desde Excel.</div>'; return; }
       $('listaProductos').innerHTML = `
         <div class="tabla-caja"><table>
-          <thead><tr><th>Producto</th><th>Categoría</th><th>Presentación</th><th>Unidad</th><th>Estado</th><th></th></tr></thead>
-          <tbody>${lista.map((p) => `
+          <thead><tr><th>Producto</th><th>Categoría</th><th>Presentación</th><th class="num">Precio base</th><th class="num">Costo</th><th class="num">Margen</th><th>Estado</th><th></th></tr></thead>
+          <tbody>${lista.map((p) => {
+            const m = margen(p.precio_base, p.costo);
+            return `
             <tr class="${p.activo ? '' : 'inactivo'}">
-              <td><strong>${esc(p.nombre)}</strong></td><td>${esc(p.categoria)}</td><td>${esc(p.presentacion)}</td>
-              <td>${esc(UNIDADES[p.unidad] || p.unidad)}</td>
+              <td><strong>${esc(p.nombre)}</strong></td><td>${esc(p.categoria)}</td><td>${esc(textoPresentacion(p))}</td>
+              <td class="num">${Number(p.precio_base) ? esc(dinero(p.precio_base)) : '<small>Sin precio</small>'}</td>
+              <td class="num">${p.costo != null ? esc(dinero(p.costo)) : '—'}</td>
+              <td class="num ${esMargenBajo(m) ? 'margen-bajo' : ''}">${esc(textoMargen(m))}</td>
               <td>${p.activo ? '<span class="etiqueta entregado">Activo</span>' : '<span class="etiqueta">Inactivo</span>'}</td>
               <td><button class="btn chico" data-editar-producto="${esc(p.id)}">Editar</button></td>
-            </tr>`).join('')}
+            </tr>`;
+          }).join('')}
           </tbody></table></div>`;
     }
     $('buscarProducto').oninput = dibujarProductos;
@@ -494,10 +691,20 @@
       $('prCategoria').value = p?.categoria || '';
       $('prPresentacion').value = p?.presentacion || '';
       $('prUnidad').value = p?.unidad || 'pieza';
+      $('prPrecio').value = p && Number(p.precio_base) ? p.precio_base : '';
+      $('prCosto').value = p?.costo ?? '';
       $('prActivo').checked = p ? p.activo : true;
+      mostrarMargenProducto();
       $('modalProducto').classList.add('visible');
       $('prNombre').focus();
     }
+
+    function mostrarMargenProducto() {
+      const m = margen(numero($('prPrecio').value), numero($('prCosto').value));
+      $('prMargen').innerHTML = m === null ? '' : `Margen: <strong class="${esMargenBajo(m) ? 'margen-bajo' : ''}">${esc(textoMargen(m))}</strong>`;
+    }
+    $('prPrecio').oninput = mostrarMargenProducto;
+    $('prCosto').oninput = mostrarMargenProducto;
 
     $('formProducto').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -506,6 +713,8 @@
         categoria: $('prCategoria').value.trim() || 'General',
         presentacion: $('prPresentacion').value.trim(),
         unidad: $('prUnidad').value,
+        precio_base: numero($('prPrecio').value) ?? 0,
+        costo: numero($('prCosto').value),
         activo: $('prActivo').checked,
       };
       const { error } = editandoProducto
@@ -525,10 +734,17 @@
     function analizarImportar() {
       importables = $('textoImportar').value.split(/\r?\n/).map((r) => r.split(/\t|;/).map((c) => c.trim()))
         .filter((c) => c[0] && !/^nombre$/i.test(c[0]))
-        .map(([nombre, categoria, presentacion, unidad]) => {
+        .map(([nombre, categoria, presentacion, unidad, precio, costo]) => {
           let u = (unidad || 'pieza').toLowerCase();
           u = ALIAS_UNIDAD[u] || u;
-          return { nombre: nombre.slice(0, 80), categoria: (categoria || 'General').slice(0, 40), presentacion: (presentacion || '').slice(0, 60), unidad: UNIDADES[u] ? u : 'pieza' };
+          const fila = {
+            nombre: nombre.slice(0, 80), categoria: (categoria || 'General').slice(0, 40),
+            presentacion: (presentacion || '').slice(0, 60), unidad: UNIDADES[u] ? u : 'pieza',
+            precio_base: Math.max(0, numero(precio) ?? 0),
+          };
+          const c = numero(costo);
+          if (c !== null && c >= 0) fila.costo = c;
+          return fila;
         });
       $('vistaImportar').textContent = importables.length ? `${importables.length} productos listos para agregar.` : '';
       $('btnConfirmarImportar').disabled = !importables.length;
@@ -536,7 +752,8 @@
 
     $('formImportar').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const { error } = await db.from('productos').insert(importables);
+      const filas = importables.map((f) => ({ costo: null, ...f }));
+      const { error } = await db.from('productos').insert(filas);
       if (error) return mostrarToast(mensajeError(error), 'error');
       $('modalImportar').classList.remove('visible');
       mostrarToast(`${importables.length} productos agregados`);
@@ -546,7 +763,7 @@
     // ─────────── Clientes ───────────
     async function cargarClientes() {
       const { data, error } = await db.from('clientes')
-        .select('*, sucursales(id, nombre, orden), cliente_productos(producto_id)')
+        .select('*, sucursales(id, nombre, orden), cliente_productos(producto_id, precio)')
         .order('nombre');
       if (error) { mostrarToast(mensajeError(error), 'error'); return; }
       clientes = data;
@@ -559,6 +776,7 @@
       if (!clientes.length) { $('listaClientes').innerHTML = '<div class="vacio">Aún no hay clientes. Crea el primero.</div>'; return; }
       $('listaClientes').innerHTML = `<div class="clientes">${clientes.map((c) => {
         const nSuc = c.sucursales.length, nProd = c.cliente_productos.length;
+        const sinPrecio = c.cliente_productos.filter((x) => !(Number(x.precio) > 0)).length;
         return `
           <article class="cliente ${c.activo ? '' : 'inactivo'}">
             <div class="cliente-cab">
@@ -568,12 +786,14 @@
             <div class="cliente-datos">
               ${esc([c.tipo, c.telefono].filter(Boolean).join(' · ') || 'Sin datos de contacto')}<br>
               ${nProd} ${nProd === 1 ? 'producto' : 'productos'}${nSuc ? ` · ${nSuc} sucursales` : ''}
+              ${sinPrecio ? `<br><span class="margen-bajo">${sinPrecio} sin precio</span>` : ''}
             </div>
             <div class="link-caja"><code>${esc(urlCliente(c.token))}</code>
               <button class="btn chico" data-copiar="${esc(c.id)}">Copiar link</button></div>
             <div class="cliente-acciones">
               <button class="btn chico" data-editar-cliente="${esc(c.id)}">Editar</button>
-              <button class="btn chico" data-enviar="${esc(c.id)}">Enviar por WhatsApp</button>
+              <button class="btn chico" data-precios="${esc(c.id)}">Productos y precios</button>
+              <button class="btn chico" data-enviar="${esc(c.id)}">Enviar link</button>
             </div>
           </article>`;
       }).join('')}</div>`;
@@ -582,21 +802,195 @@
     $('listaClientes').addEventListener('click', async (e) => {
       const b = e.target.closest('button');
       if (!b) return;
-      const c = clientes.find((x) => x.id === (b.dataset.copiar || b.dataset.editarCliente || b.dataset.enviar));
+      const c = clientes.find((x) => x.id === (b.dataset.copiar || b.dataset.editarCliente || b.dataset.enviar || b.dataset.precios));
       if (!c) return;
       if (b.dataset.copiar) {
         await navigator.clipboard.writeText(urlCliente(c.token));
         mostrarToast('Link copiado');
       } else if (b.dataset.enviar) {
-        const tel = (c.telefono || '').replace(/\D/g, '');
-        const texto = `Hola, este es tu link para hacer pedidos: ${urlCliente(c.token)}`;
-        window.open(`https://wa.me/${tel.length === 10 ? '521' + tel : tel}?text=${encodeURIComponent(texto)}`, '_blank');
+        abrirWhatsApp(c.telefono, `Hola, este es tu link para hacer pedidos: ${urlCliente(c.token)}`);
       } else {
-        abrirCliente(c);
+        abrirCliente(c, b.dataset.precios ? 2 : 1);
       }
     });
-    $('btnNuevoCliente').onclick = () => abrirCliente(null);
+    $('btnNuevoCliente').onclick = () => abrirCliente(null, 1);
 
+    // ─────────── Asistente de cliente ───────────
+    let editandoCliente = null;  // cliente guardado (null si es nuevo y aún no se guarda)
+    let pasoActual = 1;
+    let seleccion = new Map();   // producto_id → precio (texto del campo)
+
+    function abrirCliente(c, paso = 1) {
+      editandoCliente = c;
+      $('tituloCliente').textContent = c ? c.nombre : 'Nuevo cliente';
+      $('clNombre').value = c?.nombre || '';
+      $('clTipo').value = c?.tipo || '';
+      $('clTelefono').value = c?.telefono || '';
+      $('clDireccion').value = c?.direccion || '';
+      $('clHorario').value = c?.horario_recepcion || '';
+      $('clInstrucciones').value = c?.instrucciones || '';
+      $('clActivo').checked = c ? c.activo : true;
+      $('clSucursales').innerHTML = '';
+      (c?.sucursales || []).sort((a, b) => a.orden - b.orden).forEach(filaSucursal);
+
+      seleccion = new Map((c?.cliente_productos || []).map((x) => [x.producto_id, String(Number(x.precio) || '')]));
+      $('ppBuscar').value = '';
+      $('ppPorcentaje').value = '';
+      $('ppCategoria').innerHTML = '<option value="">Todas las categorías</option>' +
+        [...new Set(productos.map((p) => p.categoria))].map((cat) => `<option>${esc(cat)}</option>`).join('');
+      $('ppCopiar').innerHTML = '<option value="">Copiar de otro cliente…</option>' +
+        clientes.filter((x) => x.id !== c?.id && x.cliente_productos.length)
+          .map((x) => `<option value="${esc(x.id)}">${esc(x.nombre)} (${x.cliente_productos.length})</option>`).join('');
+      dibujarTablaPrecios();
+      irPaso(paso);
+      $('modalCliente').classList.add('visible');
+    }
+
+    function irPaso(n) {
+      pasoActual = n;
+      $('errorPaso').textContent = '';
+      document.querySelectorAll('#formCliente .paso').forEach((p) => p.classList.toggle('actual', Number(p.dataset.paso) === n));
+      document.querySelectorAll('#pasosCliente button').forEach((b) => {
+        const i = Number(b.dataset.ir);
+        b.classList.toggle('actual', i === n);
+        b.classList.toggle('hecho', i < n || (!!editandoCliente && i !== n));
+        b.disabled = !editandoCliente && i > n;     // al crear, no se salta hacia adelante
+      });
+      const nuevo = !editandoCliente;
+      $('btnAtras').hidden = n === 1 || n === 4;
+      $('btnSiguiente').hidden = !nuevo || n >= 3;
+      $('btnGuardarCliente').hidden = n === 4 || (nuevo && n < 3);
+      $('btnGuardarCliente').textContent = nuevo ? 'Guardar y ver link' : 'Guardar';
+      $('btnCancelarCliente').textContent = n === 4 ? 'Cerrar' : 'Cancelar';
+      if (n === 4) mostrarListo();
+    }
+
+    function validarPaso(n) {
+      if (n === 1 && !$('clNombre').value.trim()) {
+        $('errorPaso').textContent = 'Escribe el nombre del cliente.';
+        $('clNombre').focus();
+        return false;
+      }
+      if (n === 2) {
+        const sinPrecio = [...seleccion].filter(([, v]) => !(numero(v) > 0)).length;
+        if (sinPrecio) {
+          $('errorPaso').textContent = `Falta el precio de ${sinPrecio} ${sinPrecio === 1 ? 'producto marcado' : 'productos marcados'}.`;
+          return false;
+        }
+      }
+      return true;
+    }
+
+    $('pasosCliente').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-ir]');
+      if (!b || b.disabled) return;
+      const destino = Number(b.dataset.ir);
+      if (destino > pasoActual && !validarPaso(pasoActual)) return;
+      irPaso(destino);
+    });
+    $('btnSiguiente').onclick = () => { if (validarPaso(pasoActual)) irPaso(pasoActual + 1); };
+    $('btnAtras').onclick = () => irPaso(pasoActual - 1);
+    $('btnCancelarCliente').onclick = () => $('modalCliente').classList.remove('visible');
+
+    // Tabla de productos y precios
+    function productosVisibles() {
+      const texto = $('ppBuscar').value.trim().toLowerCase();
+      const cat = $('ppCategoria').value;
+      return productos
+        .filter((p) => p.activo || seleccion.has(p.id))
+        .filter((p) => !cat || p.categoria === cat)
+        .filter((p) => !texto || `${p.nombre} ${p.presentacion} ${p.categoria}`.toLowerCase().includes(texto));
+    }
+
+    function dibujarTablaPrecios() {
+      $('errorPaso').textContent = '';
+      if (!productos.length) {
+        $('ppTabla').innerHTML = '<div class="vacio">Primero agrega productos en Catálogo.</div>';
+        $('ppContador').textContent = '';
+        return;
+      }
+      const lista = productosVisibles();
+      $('ppTabla').innerHTML = `<table>
+        <thead><tr><th></th><th>Producto</th><th class="num">Precio base</th><th class="num">Precio del cliente</th><th class="num">Margen</th></tr></thead>
+        <tbody>${lista.map((p) => {
+          const marcado = seleccion.has(p.id);
+          return `<tr class="${marcado ? '' : 'sin-marcar'}" data-producto="${esc(p.id)}">
+            <td><input type="checkbox" aria-label="Asignar ${esc(p.nombre)}" ${marcado ? 'checked' : ''} /></td>
+            <td><strong>${esc(p.nombre)}</strong> <small>${esc(textoPresentacion(p))}</small>${p.activo ? '' : ' <small class="margen-bajo">inactivo</small>'}</td>
+            <td class="num"><small>${Number(p.precio_base) ? esc(dinero(p.precio_base)) : '—'}</small></td>
+            <td class="num"><input class="entrada" type="number" min="0" step="0.01" placeholder="0.00"
+              value="${esc(seleccion.get(p.id) ?? '')}" ${marcado ? '' : 'disabled'} aria-label="Precio de ${esc(p.nombre)}" /></td>
+            <td class="num margen"></td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="5" class="vacio">Ningún producto coincide.</td></tr>'}</tbody></table>`;
+      lista.forEach((p) => actualizarFila(p.id));
+      actualizarContador();
+    }
+
+    function actualizarFila(id) {
+      const tr = $('ppTabla').querySelector(`tr[data-producto="${CSS.escape(id)}"]`);
+      if (!tr) return;
+      const p = productos.find((x) => x.id === id);
+      const m = seleccion.has(id) ? margen(numero(seleccion.get(id)), p.costo) : null;
+      const celda = tr.querySelector('.margen');
+      celda.textContent = seleccion.has(id) ? textoMargen(m) : '';
+      celda.classList.toggle('margen-bajo', esMargenBajo(m));
+    }
+
+    function actualizarContador() {
+      const n = seleccion.size;
+      const total = productos.filter((p) => p.activo || seleccion.has(p.id)).length;
+      $('ppContador').textContent = `${n} de ${total} productos asignados.`;
+    }
+
+    function marcar(id, valor) {
+      const p = productos.find((x) => x.id === id);
+      if (valor) seleccion.set(id, seleccion.get(id) || (Number(p.precio_base) ? String(Number(p.precio_base)) : ''));
+      else seleccion.delete(id);
+    }
+
+    $('ppTabla').addEventListener('change', (e) => {
+      const tr = e.target.closest('tr[data-producto]');
+      if (!tr || e.target.type !== 'checkbox') return;
+      marcar(tr.dataset.producto, e.target.checked);
+      dibujarTablaPrecios();
+    });
+    $('ppTabla').addEventListener('input', (e) => {
+      const tr = e.target.closest('tr[data-producto]');
+      if (!tr || e.target.type !== 'number') return;
+      seleccion.set(tr.dataset.producto, e.target.value);
+      actualizarFila(tr.dataset.producto);
+    });
+    $('ppBuscar').oninput = dibujarTablaPrecios;
+    $('ppCategoria').onchange = dibujarTablaPrecios;
+    $('ppMarcar').onclick = () => {
+      const visibles = productosVisibles();
+      const todos = visibles.every((p) => seleccion.has(p.id));
+      visibles.forEach((p) => marcar(p.id, !todos));
+      dibujarTablaPrecios();
+    };
+    $('ppAjustar').onclick = () => {
+      const pct = numero($('ppPorcentaje').value);
+      if (pct === null) return mostrarToast('Escribe el porcentaje, por ejemplo 10 o -5.', 'error');
+      if (!seleccion.size) return mostrarToast('Primero marca productos.', 'error');
+      seleccion.forEach((v, id) => {
+        const precio = numero(v);
+        if (precio > 0) seleccion.set(id, String(Math.round(precio * (1 + pct / 100) * 100) / 100));
+      });
+      dibujarTablaPrecios();
+      mostrarToast(`Precios ajustados ${pct > 0 ? '+' : ''}${pct} %`);
+    };
+    $('ppCopiar').onchange = () => {
+      const origen = clientes.find((x) => x.id === $('ppCopiar').value);
+      $('ppCopiar').value = '';
+      if (!origen) return;
+      if (seleccion.size && !confirm(`Se reemplazarán los productos y precios actuales por los de ${origen.nombre}. ¿Continuar?`)) return;
+      seleccion = new Map(origen.cliente_productos.map((x) => [x.producto_id, String(Number(x.precio) || '')]));
+      dibujarTablaPrecios();
+      mostrarToast(`Copiados ${seleccion.size} productos de ${origen.nombre}`);
+    };
+
+    // Sucursales
     function filaSucursal(s = {}) {
       const div = document.createElement('div');
       div.className = 'fila';
@@ -608,65 +1002,52 @@
     }
     $('btnAgregarSucursal').onclick = () => filaSucursal();
 
-    function abrirCliente(c) {
-      editandoCliente = c;
-      $('tituloCliente').textContent = c ? 'Editar cliente' : 'Nuevo cliente';
-      $('clNombre').value = c?.nombre || '';
-      $('clTipo').value = c?.tipo || '';
-      $('clTelefono').value = c?.telefono || '';
-      $('clDireccion').value = c?.direccion || '';
-      $('clHorario').value = c?.horario_recepcion || '';
-      $('clInstrucciones').value = c?.instrucciones || '';
-      $('clActivo').checked = c ? c.activo : true;
-      $('btnNuevoLink').hidden = !c;
-      $('clSucursales').innerHTML = '';
-      (c?.sucursales || []).sort((a, b) => a.orden - b.orden).forEach(filaSucursal);
-
-      const asignados = new Set((c?.cliente_productos || []).map((x) => x.producto_id));
-      const porCat = {};
-      productos.filter((p) => p.activo || asignados.has(p.id)).forEach((p) => (porCat[p.categoria] ||= []).push(p));
-      $('clProductos').innerHTML = Object.keys(porCat).length
-        ? Object.entries(porCat).map(([cat, ps]) => `
-            <div class="cat"><span>${esc(cat)}</span><button type="button" data-marcar-cat>Marcar todos</button></div>
-            ${ps.map((p) => `<label><input type="checkbox" value="${esc(p.id)}" ${asignados.has(p.id) ? 'checked' : ''} />
-              ${esc(p.nombre)} <small>${esc(textoPresentacion(p))}</small></label>`).join('')}`).join('')
-        : '<div class="vacio">Primero agrega productos en Catálogo.</div>';
-      $('modalCliente').classList.add('visible');
+    // Paso 4
+    function mostrarListo() {
+      const c = editandoCliente;
+      if (!c) return;
+      const n = c.cliente_productos.length;
+      $('listoTitulo').textContent = c.nombre;
+      $('listoTexto').textContent = `${n} ${n === 1 ? 'producto' : 'productos'} con precio. Envíale este link para que haga sus pedidos.`;
+      $('listoLink').textContent = urlCliente(c.token);
     }
-
-    $('clProductos').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-marcar-cat]');
-      if (!b) return;
-      let el = b.parentElement.nextElementSibling;
-      const casillas = [];
-      while (el && el.tagName === 'LABEL') { casillas.push(el.querySelector('input')); el = el.nextElementSibling; }
-      const marcar = casillas.some((x) => !x.checked);
-      casillas.forEach((x) => (x.checked = marcar));
-    });
-
+    $('listoCopiar').onclick = async () => {
+      await navigator.clipboard.writeText(urlCliente(editandoCliente.token));
+      mostrarToast('Link copiado');
+    };
+    $('listoWhatsApp').onclick = () =>
+      abrirWhatsApp(editandoCliente.telefono, `Hola, este es tu link para hacer pedidos: ${urlCliente(editandoCliente.token)}`);
     $('btnNuevoLink').onclick = async () => {
       if (!confirm('El link actual dejará de funcionar y tendrás que enviarle el nuevo al cliente. ¿Continuar?')) return;
       const nuevo = crypto.randomUUID().replace(/-/g, '');
       const { error } = await db.from('clientes').update({ token: nuevo }).eq('id', editandoCliente.id);
       if (error) return mostrarToast(mensajeError(error), 'error');
+      editandoCliente.token = nuevo;
+      mostrarListo();
       mostrarToast('Link nuevo generado');
-      $('modalCliente').classList.remove('visible');
       cargarClientes();
     };
 
+    // Guardar
     $('formCliente').addEventListener('submit', async (e) => {
       e.preventDefault();
+      for (const n of [1, 2]) {
+        if (!validarPaso(n)) { irPaso(n); validarPaso(n); return; }
+      }
       const btn = $('btnGuardarCliente');
       btn.disabled = true;
+      const eraNuevo = !editandoCliente;
       try {
-        await guardarCliente();
-        $('modalCliente').classList.remove('visible');
+        const id = await guardarCliente();
+        await cargarClientes();
+        editandoCliente = clientes.find((x) => x.id === id);
         mostrarToast('Cliente guardado');
+        if (eraNuevo) irPaso(4);
+        else $('modalCliente').classList.remove('visible');
       } catch (err) {
         mostrarToast(mensajeError(err), 'error');
       } finally {
         btn.disabled = false;
-        cargarClientes();
       }
     });
 
@@ -688,6 +1069,7 @@
         const { data, error } = await db.from('clientes').insert(fila).select('id').single();
         if (error) throw error;
         id = data.id;
+        editandoCliente = { id, sucursales: [], cliente_productos: [] };
       }
 
       // Sucursales: actualizar, agregar y quitar
@@ -695,7 +1077,7 @@
         .map((f, i) => ({ id: f.dataset.id || null, nombre: f.querySelector('input').value.trim(), orden: i }))
         .filter((s) => s.nombre);
       const conservar = new Set(filas.filter((s) => s.id).map((s) => s.id));
-      const quitar = (editandoCliente?.sucursales || []).filter((s) => !conservar.has(s.id)).map((s) => s.id);
+      const quitar = (editandoCliente.sucursales || []).filter((s) => !conservar.has(s.id)).map((s) => s.id);
       if (quitar.length) {
         const { error } = await db.from('sucursales').delete().in('id', quitar);
         if (error) throw error;
@@ -710,23 +1092,30 @@
         if (error) throw error;
       }
 
-      // Productos asignados
-      const elegidos = [...$('clProductos').querySelectorAll('input:checked')].map((x) => ({ cliente_id: id, producto_id: x.value }));
-      const { error: errBorrar } = await db.from('cliente_productos').delete().eq('cliente_id', id);
-      if (errBorrar) throw errBorrar;
-      if (elegidos.length) {
-        const { error } = await db.from('cliente_productos').insert(elegidos);
+      // Productos y precios: actualizar o agregar los marcados, quitar los desmarcados
+      const asignados = [...seleccion].map(([producto_id, precio]) => ({ cliente_id: id, producto_id, precio: numero(precio) }));
+      if (asignados.length) {
+        const { error } = await db.from('cliente_productos').upsert(asignados, { onConflict: 'cliente_id,producto_id' });
         if (error) throw error;
       }
+      const quitarProductos = (editandoCliente.cliente_productos || []).map((x) => x.producto_id).filter((pid) => !seleccion.has(pid));
+      if (quitarProductos.length) {
+        const { error } = await db.from('cliente_productos').delete().eq('cliente_id', id).in('producto_id', quitarProductos);
+        if (error) throw error;
+      }
+      return id;
     }
 
     // ─────────── Ajustes ───────────
     async function cargarAjustes() {
       const { data, error } = await db.from('ajustes').select('*').single();
       if (error) return;
+      ajustes = data;
       $('ajNombre').value = data.nombre_negocio;
       $('ajWhatsapp').value = data.whatsapp || '';
       $('ajCorte').value = data.hora_corte ? data.hora_corte.slice(0, 5) : '';
+      $('ajMargen').value = data.margen_minimo ?? '';
+      $('ajInactividad').value = data.dias_inactividad ?? 7;
       $('panelNegocio').textContent = data.nombre_negocio;
       document.title = `Administración · ${data.nombre_negocio}`;
     }
@@ -738,10 +1127,13 @@
         nombre_negocio: $('ajNombre').value.trim() || 'PROVEEDOR',
         whatsapp: whatsapp || null,
         hora_corte: $('ajCorte').value || null,
+        margen_minimo: numero($('ajMargen').value),
+        dias_inactividad: Math.round(numero($('ajInactividad').value) || 7),
       }).eq('id', 1);
       if (error) return mostrarToast(/whatsapp/.test(error.message) ? 'El WhatsApp debe tener de 10 a 15 dígitos.' : mensajeError(error), 'error');
       mostrarToast('Ajustes guardados');
-      cargarAjustes();
+      await cargarAjustes();
+      dibujarProductos();
     });
 
     revisarSesion();

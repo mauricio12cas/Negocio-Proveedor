@@ -20,10 +20,10 @@
     .estado-pantalla h2 { font-size: 20px; }
     .estado-pantalla p { color: var(--tenue); }
 
-    .titulo-seccion { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--tenue); margin: 20px 0 10px; }
+    .titulo-seccion { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--tenue); margin: 20px 0 10px; display: flex; justify-content: space-between; align-items: center; }
+    .titulo-seccion .btn { text-transform: none; letter-spacing: 0; }
 
-    /* Calendario */
-    .calendario { background: var(--superficie); border: 1px solid var(--borde); border-radius: 16px; padding: 10px 10px 12px; }
+    /* Calendario (dentro del modal «Otra fecha») */
     .cal-cab { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 8px; }
     .cal-mes { font-weight: 700; text-transform: capitalize; }
     .cal-nav { width: 38px; height: 38px; border-radius: 10px; border: 0; background: transparent; font-size: 20px; }
@@ -31,23 +31,16 @@
     .cal-nav:disabled { opacity: .25; cursor: default; }
     .cal-semana, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
     .cal-semana div { text-align: center; font-size: 11px; font-weight: 700; color: var(--tenue); padding: 4px 0; }
-    .cal-dia {
-      aspect-ratio: 1; border: 0; background: transparent; border-radius: 10px;
-      font-size: 15px; font-weight: 600; position: relative;
-    }
+    .cal-dia { aspect-ratio: 1; border: 0; background: transparent; border-radius: 10px; font-size: 15px; font-weight: 600; position: relative; }
     .cal-dia:disabled { color: #c5c5bf; cursor: default; font-weight: 400; }
     .cal-dia.disponible:hover { background: var(--superficie-2); }
     .cal-dia.con-pedido { box-shadow: inset 0 0 0 2px var(--resalte-suave); color: var(--resalte); }
-    .cal-dia.con-pedido::after {
-      content: ''; position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
-      width: 5px; height: 5px; border-radius: 50%; background: var(--resalte);
-    }
+    .cal-dia.con-pedido::after { content: ''; position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--resalte); }
     .cal-dia.seleccionado { background: var(--acento); color: var(--acento-texto); box-shadow: none; }
-    .cal-dia.seleccionado::after { background: var(--acento-texto); }
-    .fecha-elegida { text-align: center; margin-top: 10px; color: var(--tenue); font-size: 14px; }
-    .fecha-elegida strong { color: var(--texto); }
 
-    .aviso { margin-top: 14px; padding: 12px 14px; border-radius: var(--radio); background: var(--resalte-suave); color: var(--resalte); font-size: 14px; }
+    .fecha-elegida { margin-top: 6px; color: var(--tenue); font-size: 14px; }
+    .fecha-elegida strong { color: var(--texto); }
+    .aviso { margin-top: 12px; padding: 12px 14px; border-radius: var(--radio); background: var(--resalte-suave); color: var(--resalte); font-size: 14px; }
     .aviso button { margin-top: 8px; }
 
     /* Productos */
@@ -59,16 +52,20 @@
     .producto-info { flex: 1; min-width: 0; }
     .producto-nombre { font-weight: 600; }
     .producto-pres { font-size: 13px; color: var(--tenue); }
+    .producto-precio { font-size: 14px; font-weight: 700; margin-top: 2px; }
+    .producto-precio .sub { color: var(--resalte); font-weight: 700; margin-left: 6px; }
+    .producto-precio.sin-precio { color: var(--aviso); font-weight: 600; font-size: 13px; }
     .cantidad { display: flex; align-items: center; background: var(--superficie); border: 1px solid var(--borde); border-radius: 12px; flex-shrink: 0; }
     .cantidad button { width: 44px; height: 44px; border: 0; background: transparent; font-size: 22px; color: var(--texto); border-radius: 12px; }
     .cantidad button:active { background: var(--superficie-2); }
+    .cantidad button:disabled { opacity: .3; cursor: not-allowed; }
     .cantidad .num { min-width: 40px; height: 44px; border: 0; background: transparent; font-weight: 700; font-size: 16px; }
     .cantidad .num.activo { color: var(--resalte); }
     .bloqueado { opacity: .4; pointer-events: none; }
 
     textarea.notas { width: 100%; min-height: 80px; resize: vertical; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 12px; outline: none; }
     textarea.notas:focus { border-color: var(--acento); }
-    .relleno-inferior { height: 130px; }
+    .relleno-inferior { height: 140px; }
 
     /* Barra inferior */
     .barra {
@@ -79,12 +76,12 @@
     }
     .barra.visible { transform: translateY(0); }
     .barra-interior { max-width: 640px; margin: 0 auto; }
-    .barra-info { display: flex; justify-content: space-between; font-size: 14px; color: var(--tenue); margin-bottom: 8px; }
-    .barra-info strong { color: var(--texto); }
+    .barra-info { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; color: var(--tenue); margin-bottom: 8px; }
+    .barra-info strong { color: var(--texto); font-size: 18px; }
     .barra .btn { width: 100%; padding: 14px; font-size: 16px; }
 
     /* Teclado numérico */
-    .teclado-fondo { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.45); display: none; align-items: flex-end; justify-content: center; }
+    .teclado-fondo { position: fixed; inset: 0; z-index: 600; background: rgba(0,0,0,.45); display: none; align-items: flex-end; justify-content: center; }
     .teclado-fondo.visible { display: flex; }
     .teclado { width: 100%; max-width: 480px; background: var(--superficie); border-radius: 20px 20px 0 0; padding: 18px 16px calc(22px + env(safe-area-inset-bottom)); }
     .teclado-titulo { font-weight: 700; }
@@ -94,6 +91,16 @@
     .tecla { height: 58px; border: 0; border-radius: 14px; background: var(--superficie-2); font-size: 22px; font-weight: 600; }
     .tecla:active { transform: scale(.96); }
     .tecla.ok { background: var(--acento); color: var(--acento-texto); font-size: 17px; }
+
+    /* Revisión */
+    .resumen-fecha { font-size: 15px; margin-bottom: 4px; }
+    .resumen-suc { font-size: 12px; font-weight: 700; color: var(--tenue); text-transform: uppercase; letter-spacing: .06em; margin-top: 14px; }
+    .resumen-linea { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 8px 0; border-bottom: 1px solid var(--borde); font-size: 14px; }
+    .resumen-linea .calc { grid-column: 1; font-size: 13px; color: var(--tenue); }
+    .resumen-linea .imp { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .resumen-notas { font-size: 14px; color: var(--tenue); margin-top: 12px; white-space: pre-wrap; }
+    .resumen-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; padding-top: 12px; border-top: 2px solid var(--texto); font-weight: 800; font-size: 20px; }
+    .resumen-total small { font-size: 12px; font-weight: 500; color: var(--tenue); }
 
     /* Historial */
     .cajon-fondo { position: fixed; inset: 0; z-index: 250; background: rgba(0,0,0,.45); display: none; align-items: flex-end; justify-content: center; }
@@ -107,12 +114,13 @@
     .tarjeta-sub { font-size: 12px; color: var(--tenue); }
     .tarjeta-suc { font-size: 12px; font-weight: 700; color: var(--tenue); text-transform: uppercase; letter-spacing: .06em; margin-top: 8px; }
     .tarjeta-linea { font-size: 14px; display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
-    .tarjeta-notas { font-size: 13px; color: var(--tenue); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--borde); }
+    .tarjeta-total { display: flex; justify-content: space-between; font-weight: 800; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--borde); }
+    .tarjeta-notas { font-size: 13px; color: var(--tenue); margin-top: 8px; }
 
     .exito { text-align: center; }
     .exito-icono { width: 56px; height: 56px; border-radius: 50%; background: var(--resalte-suave); color: var(--resalte); font-size: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
     .exito p { color: var(--tenue); margin-bottom: 18px; }
-    .exito .btn { width: 100%; padding: 13px; margin-top: 8px; }
+    .modal .btn.ancho { width: 100%; padding: 13px; margin-top: 8px; }
     .btn.whatsapp { background: #1f8f4e; border-color: #1f8f4e; color: #fff; }
   </style>
 </head>
@@ -132,11 +140,12 @@
 
   <div class="barra" id="barra">
     <div class="barra-interior">
-      <div class="barra-info"><span id="barraFecha"></span><strong id="barraCuenta"></strong></div>
-      <button class="btn primario" id="btnEnviar">Enviar pedido</button>
+      <div class="barra-info"><span id="barraDetalle"></span><strong id="barraTotal"></strong></div>
+      <button class="btn primario" id="btnRevisar">Revisar pedido</button>
     </div>
   </div>
 
+  <!-- Teclado numérico -->
   <div class="teclado-fondo" id="tecladoFondo">
     <div class="teclado" role="dialog" aria-label="Escribir cantidad">
       <div class="teclado-titulo" id="tecladoTitulo"></div>
@@ -151,13 +160,33 @@
     </div>
   </div>
 
+  <!-- Otra fecha -->
+  <div class="modal-fondo" id="modalCalendario">
+    <div class="modal">
+      <h2>Elige otra fecha</h2>
+      <div id="calendario"></div>
+      <div class="modal-acciones"><button class="btn" data-cerrar="modalCalendario">Cerrar</button></div>
+    </div>
+  </div>
+
+  <!-- Revisar pedido -->
+  <div class="modal-fondo" id="modalRevision">
+    <div class="modal">
+      <h2>Revisa tu pedido</h2>
+      <div id="revisionContenido"></div>
+      <button class="btn primario ancho" id="btnConfirmar">Confirmar pedido</button>
+      <button class="btn ancho" data-cerrar="modalRevision">Corregir</button>
+    </div>
+  </div>
+
+  <!-- Éxito -->
   <div class="modal-fondo" id="modalExito">
     <div class="modal exito">
       <div class="exito-icono">✓</div>
       <h2 id="exitoTitulo">¡Pedido enviado!</h2>
       <p id="exitoTexto"></p>
-      <button class="btn whatsapp" id="btnWhatsApp">Avisar por WhatsApp</button>
-      <button class="btn" id="btnCerrarExito">Cerrar</button>
+      <button class="btn whatsapp ancho" id="btnWhatsApp">Avisar por WhatsApp</button>
+      <button class="btn ancho" data-cerrar="modalExito">Cerrar</button>
     </div>
   </div>
 
@@ -176,16 +205,20 @@
   <script>
     const token = new URLSearchParams(location.search).get('c');
     const db = conectarSupabase();
+    const DIAS_EN_TIRA = 14;
 
     let datos = null;            // respuesta de cliente_por_token
     let sucursales = [];         // [{id, nombre}] o [{id: null, nombre: ''}] si no tiene
     let pedidos = [];            // pedidos recientes del cliente
     let cantidades = {};         // { 'iSucursal:iProducto': número }
     let fechaElegida = null;
-    let mesVisible = null;       // 'AAAA-MM'
+    let mesVisible = null;       // 'AAAA-MM' del calendario
     let ultimoPedido = null;
 
     const $ = (id) => document.getElementById(id);
+    const tienePrecio = (p) => Number(p.precio) > 0;
+
+    document.querySelectorAll('[data-cerrar]').forEach((b) => (b.onclick = () => $(b.dataset.cerrar).classList.remove('visible')));
 
     function pantallaEstado(titulo, texto) {
       $('contenido').innerHTML = `<div class="estado-pantalla"><h2>${esc(titulo)}</h2><p>${esc(texto)}</p></div>`;
@@ -235,19 +268,22 @@
                 <div class="producto-info">
                   <div class="producto-nombre">${esc(p.nombre)}</div>
                   <div class="producto-pres">${esc(textoPresentacion(p))}</div>
+                  ${tienePrecio(p)
+                    ? `<div class="producto-precio">${esc(dinero(p.precio))}<span class="sub" id="sub-${si}-${pi}"></span></div>`
+                    : '<div class="producto-precio sin-precio">Precio por confirmar</div>'}
                 </div>
                 <div class="cantidad">
-                  <button data-clave="${si}:${pi}" data-paso="-1" aria-label="Menos">−</button>
-                  <button class="num" id="num-${si}-${pi}" data-clave="${si}:${pi}" aria-label="Escribir cantidad">0</button>
-                  <button data-clave="${si}:${pi}" data-paso="1" aria-label="Más">+</button>
+                  <button data-clave="${si}:${pi}" data-paso="-1" aria-label="Menos" ${tienePrecio(p) ? '' : 'disabled'}>−</button>
+                  <button class="num" id="num-${si}-${pi}" data-clave="${si}:${pi}" aria-label="Escribir cantidad" ${tienePrecio(p) ? '' : 'disabled'}>0</button>
+                  <button data-clave="${si}:${pi}" data-paso="1" aria-label="Más" ${tienePrecio(p) ? '' : 'disabled'}>+</button>
                 </div>
               </div>`).join('')}
           `).join('')}
         </section>`).join('');
 
       $('contenido').innerHTML = `
-        <div class="titulo-seccion">1. Fecha de entrega</div>
-        <div class="calendario" id="calendario"></div>
+        <div class="titulo-seccion">1. Fecha de entrega <button class="btn chico" id="btnOtraFecha">Otra fecha</button></div>
+        <div class="tira-dias" id="tiraDias"></div>
         <div class="fecha-elegida" id="fechaElegida">Elige el día en que quieres recibir tu pedido</div>
         <div id="avisoDia"></div>
         <div id="formulario" class="bloqueado">
@@ -259,13 +295,35 @@
 
       $('formulario').addEventListener('click', (e) => {
         const b = e.target.closest('button[data-clave]');
-        if (!b) return;
+        if (!b || b.disabled) return;
         if (b.dataset.paso) cambiar(b.dataset.clave, Number(b.dataset.paso));
         else abrirTeclado(b.dataset.clave);
       });
-      dibujarCalendario();
+      $('btnOtraFecha').onclick = () => {
+        if (fechaElegida) mesVisible = fechaElegida.slice(0, 7);
+        dibujarCalendario();
+        $('modalCalendario').classList.add('visible');
+      };
+      dibujarTira();
     }
 
+    // ─────────── Tira de días ───────────
+    function dibujarTira() {
+      const fechas = Array.from({ length: DIAS_EN_TIRA }, (_, i) => sumarDias(datos.fecha_minima, i));
+      if (fechaElegida && !fechas.includes(fechaElegida)) fechas.push(fechaElegida);
+      $('tiraDias').innerHTML = fechas.map((f) => {
+        const d = new Date(f + 'T12:00:00Z');
+        const sem = d.toLocaleDateString('es-MX', { weekday: 'short', timeZone: 'UTC' }).replace('.', '');
+        const mes = d.toLocaleDateString('es-MX', { month: 'short', timeZone: 'UTC' }).replace('.', '');
+        const clases = [pedidoDelDia(f) ? 'con-pedido' : '', f === fechaElegida ? 'seleccionado' : ''].join(' ');
+        return `<button class="${clases}" data-fecha="${f}" aria-label="${esc(fechaLarga(f))}">
+          <span class="dia-sem">${esc(sem)}</span><span class="dia-num">${d.getUTCDate()}</span><span class="dia-mes">${esc(mes)}</span></button>`;
+      }).join('');
+      $('tiraDias').querySelectorAll('button').forEach((b) => (b.onclick = () => elegirFecha(b.dataset.fecha)));
+      $('tiraDias').querySelector('.seleccionado')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+
+    // ─────────── Calendario (otra fecha) ───────────
     function dibujarCalendario() {
       const min = datos.fecha_minima;
       const max = sumarDias(min, 90);
@@ -294,19 +352,21 @@
 
       $('mesAnterior').onclick = () => moverMes(-1);
       $('mesSiguiente').onclick = () => moverMes(1);
-      $('calendario').querySelectorAll('.cal-dia:not(:disabled)').forEach((b) => (b.onclick = () => elegirFecha(b.dataset.fecha)));
+      $('calendario').querySelectorAll('.cal-dia:not(:disabled)').forEach((b) => (b.onclick = () => {
+        $('modalCalendario').classList.remove('visible');
+        elegirFecha(b.dataset.fecha);
+      }));
     }
 
     function moverMes(n) {
       const [a, m] = mesVisible.split('-').map(Number);
-      const d = new Date(Date.UTC(a, m - 1 + n, 1));
-      mesVisible = d.toISOString().slice(0, 7);
+      mesVisible = new Date(Date.UTC(a, m - 1 + n, 1)).toISOString().slice(0, 7);
       dibujarCalendario();
     }
 
     function elegirFecha(fecha) {
       fechaElegida = fecha;
-      dibujarCalendario();
+      dibujarTira();
       $('fechaElegida').innerHTML = `Entrega: <strong>${esc(fechaLarga(fecha))}</strong>`;
       const existente = pedidoDelDia(fecha);
       if (existente) {
@@ -321,6 +381,7 @@
       actualizarBarra();
     }
 
+    // ─────────── Cantidades ───────────
     function cambiar(clave, paso) {
       fijarCantidad(clave, (cantidades[clave] || 0) + paso);
     }
@@ -331,34 +392,39 @@
       const el = $(`num-${si}-${pi}`);
       el.textContent = cantidades[clave];
       el.classList.toggle('activo', cantidades[clave] > 0);
+      const sub = $(`sub-${si}-${pi}`);
+      if (sub) sub.textContent = cantidades[clave] > 0 ? `× ${cantidades[clave]} = ${dinero(cantidades[clave] * datos.productos[pi].precio)}` : '';
       const totalSuc = $(`total-${si}`);
       if (totalSuc) {
-        const n = Object.entries(cantidades).filter(([k, v]) => k.startsWith(`${si}:`) && v > 0).length;
-        totalSuc.textContent = n;
+        totalSuc.textContent = Object.entries(cantidades).filter(([k, v]) => k.startsWith(`${si}:`) && v > 0).length;
       }
       actualizarBarra();
     }
 
+    /** Líneas con cantidad > 0, con todo lo necesario para mostrar y enviar. */
     function lineasDelPedido() {
       return Object.entries(cantidades)
         .filter(([, v]) => v > 0)
         .map(([clave, cantidad]) => {
           const [si, pi] = clave.split(':').map(Number);
-          return { sucursal_id: sucursales[si].id, producto_id: datos.productos[pi].id, cantidad };
+          const producto = datos.productos[pi];
+          return { sucursal: sucursales[si], producto, cantidad, importe: cantidad * Number(producto.precio) };
         });
     }
 
+    const totalDe = (lineas) => lineas.reduce((a, l) => a + l.importe, 0);
+
     function actualizarBarra() {
-      const n = lineasDelPedido().length;
-      const visible = n > 0 && fechaElegida && !pedidoDelDia(fechaElegida);
+      const lineas = lineasDelPedido();
+      const visible = lineas.length > 0 && fechaElegida && !pedidoDelDia(fechaElegida);
       $('barra').classList.toggle('visible', !!visible);
       if (visible) {
-        $('barraCuenta').textContent = `${n} ${n === 1 ? 'producto' : 'productos'}`;
-        $('barraFecha').textContent = fechaCorta(fechaElegida);
+        $('barraDetalle').textContent = `${fechaCorta(fechaElegida)} · ${lineas.length} ${lineas.length === 1 ? 'producto' : 'productos'}`;
+        $('barraTotal').textContent = dinero(totalDe(lineas));
       }
     }
 
-    // Teclado numérico
+    // ─────────── Teclado numérico ───────────
     let claveTeclado = null, valorTeclado = '';
     function abrirTeclado(clave) {
       claveTeclado = clave;
@@ -366,7 +432,7 @@
       const [si, pi] = clave.split(':').map(Number);
       const p = datos.productos[pi];
       $('tecladoTitulo').textContent = p.nombre;
-      $('tecladoSub').textContent = [sucursales[si].nombre, textoPresentacion(p)].filter(Boolean).join(' · ');
+      $('tecladoSub').textContent = [sucursales[si].nombre, textoPresentacion(p), dinero(p.precio)].filter(Boolean).join(' · ');
       $('tecladoPantalla').textContent = valorTeclado || '0';
       $('tecladoFondo').classList.add('visible');
     }
@@ -386,52 +452,80 @@
       if (e.target.id === 'tecladoFondo') $('tecladoFondo').classList.remove('visible');
     });
 
-    // Enviar
-    $('btnEnviar').addEventListener('click', async () => {
+    // ─────────── Revisar y confirmar ───────────
+    function htmlLineas(lineas) {
+      return sucursales.map((s) => {
+        const ls = lineas.filter((l) => l.sucursal === s);
+        if (!ls.length) return '';
+        return `${s.nombre ? `<div class="resumen-suc">${esc(s.nombre)}</div>` : ''}
+          ${ls.map((l) => `
+            <div class="resumen-linea">
+              <span>${esc(l.producto.nombre)} <span class="tarjeta-sub">${esc(l.producto.presentacion)}</span></span>
+              <span class="calc">${esc(l.cantidad)} × ${esc(dinero(l.producto.precio))}</span>
+              <span class="imp">${esc(dinero(l.importe))}</span>
+            </div>`).join('')}`;
+      }).join('');
+    }
+
+    $('btnRevisar').onclick = () => {
       const lineas = lineasDelPedido();
       if (!fechaElegida || !lineas.length) return;
-      const btn = $('btnEnviar');
+      const notas = $('notas').value.trim();
+      $('revisionContenido').innerHTML = `
+        <div class="resumen-fecha">Entrega: <strong>${esc(fechaLarga(fechaElegida))}</strong></div>
+        ${htmlLineas(lineas)}
+        ${notas ? `<div class="resumen-notas">Notas: ${esc(notas)}</div>` : ''}
+        <div class="resumen-total"><span>Total <small>IVA incluido</small></span><span>${esc(dinero(totalDe(lineas)))}</span></div>`;
+      $('modalRevision').classList.add('visible');
+    };
+
+    $('btnConfirmar').onclick = async () => {
+      const lineas = lineasDelPedido();
+      const btn = $('btnConfirmar');
       btn.disabled = true;
       btn.textContent = 'Enviando…';
       const notas = $('notas').value.trim();
       const { data, error } = await db.rpc('crear_pedido', {
-        p_token: token, p_fecha_entrega: fechaElegida, p_lineas: lineas, p_notas: notas,
+        p_token: token,
+        p_fecha_entrega: fechaElegida,
+        p_lineas: lineas.map((l) => ({ sucursal_id: l.sucursal.id, producto_id: l.producto.id, cantidad: l.cantidad })),
+        p_notas: notas,
       });
       btn.disabled = false;
-      btn.textContent = 'Enviar pedido';
+      btn.textContent = 'Confirmar pedido';
       if (error) return mostrarToast(mensajeError(error), 'error');
 
-      ultimoPedido = { folio: data.folio, fecha: fechaElegida, lineas, notas };
+      ultimoPedido = { folio: data.folio, fecha: fechaElegida, lineas, notas, total: Number(data.total) };
+      $('modalRevision').classList.remove('visible');
       $('exitoTitulo').textContent = `¡Pedido #${data.folio} enviado!`;
-      $('exitoTexto').textContent = `Lo recibirás el ${fechaLarga(fechaElegida).toLowerCase()}. Te avisaremos cuando lo confirmemos.`;
+      $('exitoTexto').textContent = `Total ${dinero(data.total)}. Lo recibirás el ${fechaLarga(fechaElegida).toLowerCase()}. Te avisaremos cuando lo confirmemos.`;
       $('modalExito').classList.add('visible');
 
       await cargarPedidos();
       Object.keys(cantidades).forEach((k) => fijarCantidad(k, 0));
       $('notas').value = '';
       elegirFecha(fechaElegida);
-    });
-
-    $('btnCerrarExito').onclick = () => $('modalExito').classList.remove('visible');
+    };
 
     $('btnWhatsApp').onclick = () => {
       if (!ultimoPedido) return;
       let msg = `*Pedido #${ultimoPedido.folio}*\n${datos.cliente.nombre}\nEntrega: ${fechaLarga(ultimoPedido.fecha, true)}\n`;
       sucursales.forEach((s) => {
-        const items = ultimoPedido.lineas.filter((l) => l.sucursal_id === s.id);
+        const items = ultimoPedido.lineas.filter((l) => l.sucursal === s);
         if (!items.length) return;
         msg += s.nombre ? `\n*${s.nombre}*\n` : '\n';
         items.forEach((l) => {
-          const p = datos.productos.find((x) => x.id === l.producto_id);
-          msg += `• ${p.nombre}${p.presentacion ? ` (${p.presentacion})` : ''}: *${l.cantidad}*\n`;
+          const p = l.producto;
+          msg += `• ${p.nombre}${p.presentacion ? ` (${p.presentacion})` : ''}: *${l.cantidad}* × ${dinero(p.precio)} = ${dinero(l.importe)}\n`;
         });
       });
+      msg += `\n*Total: ${dinero(ultimoPedido.total)}*`;
       if (ultimoPedido.notas) msg += `\nNotas: ${ultimoPedido.notas}`;
       const numero = datos.negocio.whatsapp || '';
       window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, '_blank');
     };
 
-    // Historial
+    // ─────────── Historial ───────────
     async function abrirHistorial() {
       $('historialFondo').classList.add('visible');
       $('historialContenido').innerHTML = '<div class="vacio">Cargando…</div>';
@@ -454,8 +548,10 @@
             </div>
             ${Object.entries(porSuc).map(([suc, ls]) => `
               ${suc ? `<div class="tarjeta-suc">${esc(suc)}</div>` : ''}
-              ${ls.map((l) => `<div class="tarjeta-linea"><span>${esc(l.producto)} <span class="tarjeta-sub">${esc(l.presentacion)}</span></span><strong>${esc(l.cantidad)}</strong></div>`).join('')}
+              ${ls.map((l) => `<div class="tarjeta-linea"><span>${esc(l.cantidad)} × ${esc(l.producto)} <span class="tarjeta-sub">${esc(l.presentacion)}</span></span>
+                <strong>${l.importe != null ? esc(dinero(l.importe)) : ''}</strong></div>`).join('')}
             `).join('')}
+            ${p.total != null ? `<div class="tarjeta-total"><span>Total</span><span>${esc(dinero(p.total))}</span></div>` : ''}
             ${p.notas ? `<div class="tarjeta-notas">${esc(p.notas)}</div>` : ''}
           </div>`;
       }).join('');
