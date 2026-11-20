@@ -1,0 +1,10 @@
+/* Ajustes globales mínimos; el resto lo pone Ant Design. */
+html, body, #root { min-height: 100%; }
+body { margin: 0; -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+.cifra { font-variant-numeric: tabular-nums; }
+@media print {
+  .sin-imprimir, .ant-layout-sider, .ant-layout-header, .ant-message { display: none !important; }
+  .solo-imprimir { display: block !important; }
+  .panel-principal { margin-left: 0 !important; }
+  .ant-layout, body { background: #fff !important; }
+}
