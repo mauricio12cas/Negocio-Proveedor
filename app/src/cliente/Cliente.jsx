@@ -10,7 +10,8 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
-  COLOR_ESTADO, ESTADOS, db, dinero, fechaCorta, fechaLarga, mensajeError, plural, sumarDias, textoPresentacion,
+  COLOR_ESTADO, ESTADOS, UNIDADES, ajustarCantidad, db, dinero, esGranel, fechaCorta, fechaLarga, mensajeError, plural, sumarDias,
+  textoCantidad, textoPresentacion,
 } from '../comun.js';
 import { Logo, useIconoMarca } from '../Tema.jsx';
 import Hoja from '../Hoja.jsx';
@@ -83,12 +84,15 @@ export default function Cliente({ alCargarMarca }) {
   const lineas = Object.entries(cantidades).filter(([, v]) => v > 0).map(([clave, cantidad]) => {
     const [si, pi] = clave.split(':').map(Number);
     const producto = datos.productos[pi];
-    return { si, sucursal: sucursales[si], producto, cantidad, importe: cantidad * Number(producto.precio) };
+    return { si, sucursal: sucursales[si], producto, cantidad, importe: Math.round(cantidad * Number(producto.precio) * 100) / 100 };
   }).sort((a, b) => a.si - b.si);
   const total = lineas.reduce((a, l) => a + l.importe, 0);
   const barraVisible = lineas.length > 0 && !bloqueado;
 
-  const fijar = (clave, valor) => setCantidades((c) => ({ ...c, [clave]: Math.max(0, Math.min(999, Math.round(Number(valor) || 0))) }));
+  const fijar = (clave, valor) => {
+    const producto = datos.productos[Number(clave.split(':')[1])];
+    setCantidades((c) => ({ ...c, [clave]: ajustarCantidad(valor, producto.unidad) }));
+  };
 
   function elegirFecha(f) {
     setFecha(f);
@@ -125,7 +129,7 @@ export default function Cliente({ alCargarMarca }) {
       msg += s.nombre ? `\n*${s.nombre}*\n` : '\n';
       items.forEach((l) => {
         const p = l.producto;
-        msg += `• ${p.nombre}${p.presentacion ? ` (${p.presentacion})` : ''}: *${l.cantidad}* × ${dinero(p.precio)} = ${dinero(l.importe)}\n`;
+        msg += `• ${p.nombre}${p.presentacion ? ` (${p.presentacion})` : ''}: *${textoCantidad(l.cantidad, esGranel(p.unidad) ? p.unidad : null)}* × ${dinero(p.precio)} = ${dinero(l.importe)}\n`;
       });
     });
     msg += `\n*Total: ${dinero(u.total)}*`;
@@ -229,15 +233,26 @@ export default function Cliente({ alCargarMarca }) {
   const control = (clave, p) => {
     const n = cantidades[clave] || 0;
     const des = !tienePrecio(p);
+    const granel = esGranel(p.unidad);
+    const paso = granel ? 0.5 : 1;
     return (
       <Space.Compact size="large">
-        <Button aria-label="Menos" icon={<MinusOutlined />} disabled={des || n === 0} onClick={() => fijar(clave, n - 1)} />
-        <InputNumber
-          aria-label="Cantidad" inputMode="numeric" pattern="[0-9]*" controls={false} min={0} max={999} precision={0} disabled={des}
-          value={n} onChange={(v) => fijar(clave, v)} onFocus={(e) => e.target.select()}
-          style={{ width: 58, textAlign: 'center', fontWeight: 700 }} className="cifra"
-        />
-        <Button aria-label="Más" icon={<PlusOutlined />} disabled={des} onClick={() => fijar(clave, n + 1)} />
+        <Button aria-label="Menos" icon={<MinusOutlined />} disabled={des || n === 0} onClick={() => fijar(clave, Math.max(0, n - paso))} />
+        {granel ? (
+          <InputNumber
+            aria-label="Cantidad" inputMode="decimal" controls={false} min={0} max={999} step={0.5} disabled={des} data-granel="si"
+            value={n} onChange={(v) => fijar(clave, v)} onFocus={(e) => e.target.select()}
+            suffix={<span style={{ fontSize: 12, opacity: 0.6 }}>{p.unidad === 'kilo' ? 'kg' : 'L'}</span>}
+            style={{ width: 86, textAlign: 'center', fontWeight: 700 }} className="cifra"
+          />
+        ) : (
+          <InputNumber
+            aria-label="Cantidad" inputMode="numeric" pattern="[0-9]*" controls={false} min={0} max={999} precision={0} disabled={des}
+            value={n} onChange={(v) => fijar(clave, v)} onFocus={(e) => e.target.select()}
+            style={{ width: 58, textAlign: 'center', fontWeight: 700 }} className="cifra"
+          />
+        )}
+        <Button aria-label="Más" icon={<PlusOutlined />} disabled={des} onClick={() => fijar(clave, n + paso)} />
       </Space.Compact>
     );
   };
@@ -266,8 +281,9 @@ export default function Cliente({ alCargarMarca }) {
                     <Text type="secondary" style={{ fontSize: 13, display: 'block' }}>{textoPresentacion(p)}</Text>
                     {tienePrecio(p) ? (
                       <div className="cifra" style={{ fontWeight: 600, marginTop: 2 }}>
-                        {dinero(p.precio)}
-                        {n > 0 && <Text style={{ color: t.colorPrimary, fontWeight: 600, marginLeft: 6 }} className="subtotal">× {n} = {dinero(n * p.precio)}</Text>}
+                        {dinero(p.precio)}{esGranel(p.unidad) && <Text type="secondary" style={{ fontWeight: 400 }}> / {UNIDADES[p.unidad]}</Text>}
+                        {n > 0 && <Text style={{ color: t.colorPrimary, fontWeight: 600, marginLeft: 6 }} className="subtotal">
+                          × {esGranel(p.unidad) ? textoCantidad(n, p.unidad) : n} = {dinero(Math.round(n * p.precio * 100) / 100)}</Text>}
                       </div>
                     ) : <Text type="warning" style={{ fontSize: 13, display: 'block' }}>Precio por confirmar</Text>}
                   </div>
@@ -362,7 +378,7 @@ export default function Cliente({ alCargarMarca }) {
               <Flex key={`${l.si}:${l.producto.id}`} justify="space-between" align="center" gap={12} style={{ padding: '8px 0', borderBottom: `1px solid ${t.colorBorderSecondary}` }}>
                 <div>
                   <div>{l.producto.nombre} <Text type="secondary" style={{ fontSize: 12 }}>{l.producto.presentacion}</Text></div>
-                  <Text type="secondary" style={{ fontSize: 13 }}>{l.cantidad} × {dinero(l.producto.precio)}</Text>
+                  <Text type="secondary" style={{ fontSize: 13 }}>{textoCantidad(l.cantidad, esGranel(l.producto.unidad) ? l.producto.unidad : null)} × {dinero(l.producto.precio)}</Text>
                 </div>
                 <Text strong className="cifra">{dinero(l.importe)}</Text>
               </Flex>
@@ -406,7 +422,7 @@ export default function Cliente({ alCargarMarca }) {
                 {suc && <Text type="secondary" strong style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em' }}>{suc}</Text>}
                 {ls.map((l, i) => (
                   <Flex key={i} justify="space-between" gap={10} style={{ padding: '2px 0' }}>
-                    <span>{l.cantidad} × {l.producto} <Text type="secondary" style={{ fontSize: 12 }}>{l.presentacion}</Text></span>
+                    <span>{textoCantidad(l.cantidad, esGranel(l.unidad) ? l.unidad : null)} × {l.producto} <Text type="secondary" style={{ fontSize: 12 }}>{l.presentacion}</Text></span>
                     <Text className="cifra">{l.importe != null ? dinero(l.importe) : ''}</Text>
                   </Flex>
                 ))}

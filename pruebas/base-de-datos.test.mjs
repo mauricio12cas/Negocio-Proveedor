@@ -112,7 +112,7 @@ await prueba('crear un pedido válido', async () => {
   assert.ok(r.folio > 0);
   await como('authenticated', ADMIN);
   const l = await db.query(`select producto_nombre, cantidad from pedido_lineas order by producto_nombre`);
-  assert.deepEqual(l.rows.map((x) => [x.producto_nombre, x.cantidad]), [['Aceite vegetal', 1], ['Frijol negro', 2]]);
+  assert.deepEqual(l.rows.map((x) => [x.producto_nombre, Number(x.cantidad)]), [['Aceite vegetal', 1], ['Frijol negro', 2]]);
 });
 
 await prueba('no permite dos pedidos el mismo día', async () => {
@@ -242,6 +242,40 @@ await prueba('resumen_clientes: solo el admin lo ve, con conteos correctos', asy
 await prueba('el público no puede usar funciones internas', async () => {
   await como('anon');
   await falla(`select es_admin()`, [], /permission denied/);
+});
+
+await prueba('granel: decimales en productos por kilo, enteros en los demás', async () => {
+  await como('authenticated', ADMIN);
+  await db.query(`insert into productos (id, nombre, categoria, presentacion, unidad) values
+    ('10000000-0000-0000-0000-0000000000a1', 'Arroz a granel', 'Granos', 'Por kilo', 'kilo')`);
+  await db.query(`insert into cliente_productos (cliente_id, producto_id, precio) values
+    ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-0000000000a1', 33.33)`);
+  const ARROZ = '10000000-0000-0000-0000-0000000000a1';
+  const f = sumarDias(fechaMin, 20);
+  await como('anon');
+  // 2.5 kg × $33.33 = $83.325 → $83.33; 1 caja de aceite $380
+  const r = (await uno(`select crear_pedido('tokencentro', $1, $2) as r`,
+    [f, lineas([{ producto_id: ARROZ, cantidad: 2.5 }, { producto_id: P2, cantidad: 1 }])])).r;
+  assert.equal(Number(r.total), 463.33);
+  await como('authenticated', ADMIN);
+  const l = await uno(`select l.cantidad::float as c, l.importe::float as imp from pedido_lineas l
+    join pedidos p on p.id = l.pedido_id where p.fecha_entrega = $1 and l.producto_id = $2`, [f, ARROZ]);
+  assert.deepEqual(l, { c: 2.5, imp: 83.33 });
+  const suma = await uno(`select sum(l.importe)::float as s from pedido_lineas l join pedidos p on p.id = l.pedido_id where p.fecha_entrega = $1`, [f]);
+  assert.equal(suma.s, 463.33);
+
+  // El administrador ajusta al peso real y el importe se recalcula solo
+  await db.query(`update pedido_lineas set cantidad = 2.37 where producto_id = $1`, [ARROZ]);
+  assert.equal((await uno(`select importe::float as imp from pedido_lineas where producto_id = $1`, [ARROZ])).imp, 78.99);
+
+  await como('anon');
+  const g = sumarDias(fechaMin, 21);
+  await falla(`select crear_pedido('tokencentro', $1, $2)`, [g, lineas([{ producto_id: P2, cantidad: 1.5 }])], /solo se vende por pieza completa/);
+  for (const mala of [0, -1, 1.2345, 'mucho', 1000]) {
+    await falla(`select crear_pedido('tokencentro', $1, $2)`, [g, lineas([{ producto_id: ARROZ, cantidad: mala }])], /Cantidad inválida/);
+  }
+  await como('authenticated', ADMIN);
+  assert.equal((await uno(`select count(*)::int as n from pedidos where fecha_entrega = $1`, [g])).n, 0);
 });
 
 await prueba('el cliente recibe la marca y los datos del negocio, sin costos', async () => {
