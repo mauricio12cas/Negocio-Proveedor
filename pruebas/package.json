@@ -3,11 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node base-de-datos.test.mjs && node pantallas.test.mjs"
+    "test": "node base-de-datos.test.mjs && npm run build --prefix ../app && node pantallas.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.2.17",
-    "@supabase/supabase-js": "2.45.4",
-    "chart.js": "4.4.6"
+    "@supabase/supabase-js": "2.45.4"
   }
 }

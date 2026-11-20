@@ -7,16 +7,19 @@ Proyecto de proveedor de insumos para restaurantes.
 
 ## Sistema de pedidos
 
-Dos pantallas:
+Hecho con **React + [Ant Design](https://ant.design)** (compilado con Vite) y Supabase. Tres pantallas:
 
 - **`app/index.html`: pantalla del cliente.** Cada cliente recibe su propio link (`index.html?c=<código>`). Elige la fecha de entrega, las cantidades por producto (y por sucursal, si tiene) y envía. Puede ver sus pedidos recientes y su estado.
-- **`app/admin.html`: tu panel.** Pedidos con su estado (recibido, confirmado, en ruta, entregado, cancelado), lista de lo que hay que comprar por día, clientes con sus sucursales y productos, catálogo (con importación desde Excel) y ajustes (nombre del negocio, WhatsApp, hora de corte).
+- **`app/admin.html`: tu panel.** Tablero con ventas y alertas, pedidos con su estado (recibido, confirmado, en ruta, entregado, cancelado), lista de lo que hay que comprar por día, clientes con sus productos, precios y sucursales, catálogo (con importación desde Excel) y ajustes (negocio, logo y color, datos de remisión, reglas).
+- **`app/remision.html`: remisión imprimible / PDF**, por pedido o de todos los pedidos de un día.
+
+El código está en `app/src/` (`cliente/`, `panel/`, `remision/` y lo compartido en `comun.js` y `Tema.jsx`).
 
 Reglas: un pedido por cliente por día; no se puede pedir para el mismo día; con hora de corte, los pedidos tardíos pasan a un día después; solo cantidades enteras.
 
 ### Puesta en marcha
 
-> **Estado actual:** el proyecto de Supabase **«pedidos-proveedor»** ya está creado, con la base de datos instalada, y `app/config.js` ya apunta a él. Tu usuario ya es administrador. Solo falta publicar (paso 6) y empezar a cargar datos (paso 7).
+> **Estado actual:** el proyecto de Supabase **«pedidos-proveedor»** ya está creado, con la base de datos instalada, y `app/public/config.js` ya apunta a él. Tu usuario ya es administrador. Solo falta publicar (paso 6) y empezar a cargar datos (paso 7).
 
 1. **Crea un proyecto en [Supabase](https://supabase.com)** (plan gratuito).
 2. En **SQL Editor**, pega y ejecuta el contenido de `supabase/migrations/20261119000000_esquema_inicial.sql`.
@@ -25,9 +28,11 @@ Reglas: un pedido por cliente por día; no se puede pedir para el mismo día; co
    ```sql
    insert into administradores (user_id) values ('ID-DE-TU-USUARIO');
    ```
-5. En **Project Settings → API**, copia la *Project URL* y la *anon public key* a `app/config.js`.
-6. Publica la carpeta `app/`. El repositorio ya lo hace solo con GitHub Pages (`.github/workflows/publicar-app.yml`) cada vez que hay cambios en `main`: activa una vez **Settings → Pages → Source: GitHub Actions**. El panel queda en `https://mauricio12cas.github.io/Negocio-Proveedor/admin.html`.
+5. En **Project Settings → API**, copia la *Project URL* y la *anon public key* a `app/public/config.js`.
+6. Publica la app. El repositorio la compila (`app/dist`) y la publica solo con GitHub Pages (`.github/workflows/publicar-app.yml`) cada vez que hay cambios en `main`: activa una vez **Settings → Pages → Source: GitHub Actions**. El panel queda en `https://mauricio12cas.github.io/Negocio-Proveedor/admin.html`.
 7. Entra a `admin.html`: agrega productos en **Catálogo**, crea tus **Clientes**, marca qué productos puede pedir cada uno y envíales su link.
+
+Para trabajar en tu computadora: `cd app && npm install && npm run dev` y abre la dirección que te muestra.
 
 ### Seguridad
 
@@ -41,7 +46,7 @@ Reglas: un pedido por cliente por día; no se puede pedir para el mismo día; co
 cd pruebas && npm install && npm test
 ```
 
-Prueban la base de datos (permisos, reglas de pedido) en un Postgres local y las dos pantallas en Chromium.
+Prueban la base de datos (permisos, reglas de pedido) en un Postgres local; luego compilan la app y prueban las pantallas en Chromium.
 
 ## Documentos
 

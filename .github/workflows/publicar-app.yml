@@ -1,5 +1,5 @@
-# Publica la carpeta app/ en GitHub Pages cada vez que hay cambios en main.
-# Antes de publicar, corre las pruebas de la base de datos.
+# Compila la app (React + Ant Design, en app/) y publica app/dist en GitHub Pages
+# cada vez que hay cambios en main. Antes de publicar, corre las pruebas de la base de datos.
 name: Publicar app
 
 on:
@@ -39,9 +39,17 @@ jobs:
       url: ${{ steps.despliegue.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Compilar la app
+        working-directory: app
+        run: |
+          npm ci
+          npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: app
+          path: app/dist
       - id: despliegue
         uses: actions/deploy-pages@v4
