@@ -2,7 +2,7 @@
 
 Transcripción del cuestionario completo contestado a mano en iPad (noviembre de 2026; el original está en `contestados/ronda-1-cuestionario-completo.pdf`). Respondiste **147 de 355 preguntas** y **36 de las 93 críticas**. Las secciones O a AI (devoluciones, pagos, crédito, facturación, finanzas, legal, equipo, atención, canales, portal, panel, reparto, notificaciones, reportes, tecnología) quedaron en blanco.
 
-El siguiente paso es el cuestionario corto de seguimiento: `cuestionario-ipad-seguimiento.pdf` (55 preguntas, casi todas de palomita).
+El siguiente paso fue el cuestionario corto de seguimiento (`cuestionario-ipad-seguimiento.pdf`); sus respuestas están en `respuestas-ronda-2.md`.
 
 ---
 

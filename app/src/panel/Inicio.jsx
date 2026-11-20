@@ -8,7 +8,7 @@ import {
   InboxOutlined, ReloadOutlined, ShoppingOutlined, TagOutlined, WhatsAppOutlined, WarningOutlined,
 } from '@ant-design/icons';
 import {
-  abrirWhatsApp, db, dinero, fechaLarga, hoyMX, mensajeError, plural, sumarDias, textoMargen, urlCliente, variacion,
+  abrirWhatsApp, textoCantidad, db, dinero, fechaLarga, hoyMX, mensajeError, plural, sumarDias, textoMargen, urlCliente, variacion,
 } from '../comun.js';
 import { Encabezado, usePanel } from './Panel.jsx';
 import Grafica from './Grafica.jsx';
@@ -191,7 +191,7 @@ export default function Inicio() {
           <Col xs={24} lg={12}>
             <Card title="Productos más vendidos" extra={<Text type="secondary">Por importe</Text>} style={{ height: '100%' }}>
               <TopLista id="topProductos" filas={estadisticas?.top_productos} vacio="Aún no hay ventas en este periodo"
-                detalle={(f) => plural(Number(f.cantidad), 'vendido', 'vendidos')} />
+                detalle={(f) => `${textoCantidad(f.cantidad)} ${Number(f.cantidad) === 1 ? 'vendido' : 'vendidos'}`} />
             </Card>
           </Col>
 

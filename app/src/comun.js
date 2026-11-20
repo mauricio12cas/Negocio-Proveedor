@@ -78,6 +78,26 @@ export function margen(precio, costo) {
 }
 export const textoMargen = (m) => (m === null ? '—' : `${m.toFixed(1)} %`);
 
+/** Productos que se venden a granel (cantidades con decimales). */
+export const esGranel = (unidad) => unidad === 'kilo' || unidad === 'litro';
+
+const FORMATO_CANTIDAD = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 3 });
+const PLURAL_UNIDAD = { pieza: 'piezas', caja: 'cajas', costal: 'costales', bulto: 'bultos', paquete: 'paquetes', litro: 'litros' };
+/** «2.5 kg», «3 cajas», «1 costal»; sin unidad si no se indica. */
+export function textoCantidad(cantidad, unidad) {
+  const n = Number(cantidad) || 0;
+  const texto = FORMATO_CANTIDAD.format(n);
+  if (!unidad) return texto;
+  if (unidad === 'kilo') return `${texto} kg`;
+  return `${texto} ${n === 1 ? (UNIDADES[unidad] || unidad) : (PLURAL_UNIDAD[unidad] || UNIDADES[unidad] || unidad)}`;
+}
+
+/** Redondea según el producto: 3 decimales a granel, entero en lo demás (0 a 999). */
+export function ajustarCantidad(valor, unidad) {
+  const n = Math.max(0, Math.min(999, Number(valor) || 0));
+  return esGranel(unidad) ? Math.round(n * 1000) / 1000 : Math.round(n);
+}
+
 export function textoPresentacion(p) {
   return [p.presentacion, p.unidad ? `(${UNIDADES[p.unidad] || p.unidad})` : ''].filter(Boolean).join(' ');
 }

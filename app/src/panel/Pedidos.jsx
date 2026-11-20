@@ -1,11 +1,12 @@
 // Pedidos: tabla con filtros, cambio de estado, detalle por pedido y remisiones.
 import { useEffect, useState } from 'react';
-import { Alert, App, Button, Card, Col, DatePicker, Divider, Empty, Flex, Row, Select, Skeleton, Table, Tag, Tooltip, Typography } from 'antd';
-import { DownOutlined, UpOutlined } from '@ant-design/icons';
+import { Alert, App, Button, Card, Col, DatePicker, Divider, Empty, Flex, InputNumber, Row, Select, Skeleton, Space, Table, Tag, Tooltip, Typography } from 'antd';
+import { DownOutlined, UpOutlined, ColumnHeightOutlined } from '@ant-design/icons';
 import { EnvironmentOutlined, FileTextOutlined, PrinterOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
-  COLOR_ESTADO, ESTADOS, db, dinero, fechaCorta, fechaHora, fechaLarga, hoyMX, mensajeError, sumarDias, textoPresentacion,
+  COLOR_ESTADO, ESTADOS, db, dinero, esGranel, fechaCorta, fechaHora, fechaLarga, hoyMX, mensajeError, sumarDias, textoCantidad,
+  textoPresentacion,
 } from '../comun.js';
 import { Encabezado, usePanel } from './Panel.jsx';
 
@@ -13,26 +14,68 @@ const { Text } = Typography;
 const totalDe = (p) => p.pedido_lineas.reduce((a, l) => a + Number(l.importe || 0), 0);
 export const abrirRemisiones = (fecha) => window.open(`remision.html?fecha=${encodeURIComponent(fecha)}`, '_blank');
 
-function Detalle({ p }) {
+function Detalle({ p, alGuardar }) {
+  const { message } = App.useApp();
+  const [pesos, setPesos] = useState(null);   // { idLinea: cantidad } mientras se ajusta
+  const [guardando, setGuardando] = useState(false);
   const porSuc = {};
   [...p.pedido_lineas].sort((a, b) => a.producto_nombre.localeCompare(b.producto_nombre)).forEach((l) => (porSuc[l.sucursal_nombre] ||= []).push(l));
   const c = p.clientes || {};
   const entrega = [c.direccion, c.horario_recepcion, c.instrucciones].filter(Boolean).join(' · ');
+  const conGranel = p.estado !== 'cancelado' && p.pedido_lineas.some((l) => esGranel(l.unidad) && l.id);
+
+  async function guardarPesos() {
+    const cambios = p.pedido_lineas.filter((l) => pesos[l.id] != null && Number(pesos[l.id]) !== Number(l.cantidad));
+    if (cambios.some((l) => !(Number(pesos[l.id]) > 0))) return message.error('El peso debe ser mayor a 0.');
+    setGuardando(true);
+    for (const l of cambios) {
+      const { error } = await db.from('pedido_lineas').update({ cantidad: Math.round(Number(pesos[l.id]) * 1000) / 1000 }).eq('id', l.id);
+      if (error) { setGuardando(false); return message.error(mensajeError(error)); }
+    }
+    setGuardando(false);
+    setPesos(null);
+    message.success(cambios.length ? 'Pesos actualizados' : 'Sin cambios');
+    if (cambios.length) alGuardar?.();
+  }
+
   return (
-    <div className="pedido-detalle" style={{ maxWidth: 720 }}>
+    <div className="pedido-detalle" style={{ maxWidth: 720 }} onClick={(e) => e.stopPropagation()}>
       {entrega && <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}><EnvironmentOutlined /> {entrega}</Text>}
       {Object.entries(porSuc).map(([suc, ls]) => (
         <div key={suc}>
           {suc && <Divider orientation="left" plain style={{ margin: '8px 0', fontSize: 12 }}>{suc}</Divider>}
-          {ls.map((l, i) => (
-            <Flex key={i} justify="space-between" gap={12} className="linea" style={{ padding: '4px 0' }}>
-              <span style={{ minWidth: 0, flex: 1 }}><Tag bordered={false} style={{ fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{l.cantidad}</Tag>
-                {l.producto_nombre} <Text type="secondary">{textoPresentacion(l)}{l.precio_unitario != null ? ` · ${dinero(l.precio_unitario)}` : ''}</Text></span>
-              <Text className="cifra" style={{ whiteSpace: 'nowrap' }}>{l.importe != null ? dinero(l.importe) : ''}</Text>
-            </Flex>
-          ))}
+          {ls.map((l, i) => {
+            const editable = pesos && esGranel(l.unidad) && l.id;
+            return (
+              <Flex key={l.id || i} justify="space-between" align="center" gap={12} className="linea" style={{ padding: '4px 0' }}>
+                <span style={{ minWidth: 0, flex: 1 }}>
+                  {editable ? (
+                    <InputNumber size="small" min={0.001} max={999} step={0.1} inputMode="decimal" className="peso-real" data-linea={l.id}
+                      value={pesos[l.id] ?? Number(l.cantidad)} onChange={(v) => setPesos((x) => ({ ...x, [l.id]: v }))}
+                      suffix={l.unidad === 'kilo' ? 'kg' : 'L'} style={{ width: 96, marginRight: 8 }} />
+                  ) : (
+                    <Tag bordered={false} style={{ fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{textoCantidad(l.cantidad, esGranel(l.unidad) ? l.unidad : null)}</Tag>
+                  )}
+                  {l.producto_nombre} <Text type="secondary">{textoPresentacion(l)}{l.precio_unitario != null ? ` · ${dinero(l.precio_unitario)}` : ''}</Text>
+                </span>
+                <Text className="cifra" style={{ whiteSpace: 'nowrap' }}>{l.importe != null ? dinero(l.importe) : ''}</Text>
+              </Flex>
+            );
+          })}
         </div>
       ))}
+      {conGranel && (
+        <Flex gap={8} style={{ marginTop: 8 }}>
+          {pesos ? (
+            <Space>
+              <Button size="small" type="primary" loading={guardando} onClick={guardarPesos} className="guardar-pesos">Guardar pesos</Button>
+              <Button size="small" onClick={() => setPesos(null)}>Cancelar</Button>
+            </Space>
+          ) : (
+            <Button size="small" icon={<ColumnHeightOutlined />} onClick={() => setPesos({})} className="ajustar-pesos">Ajustar pesos</Button>
+          )}
+        </Flex>
+      )}
       {p.notas && <Alert type="warning" className="pedido-notas" message={p.notas} style={{ marginTop: 10, whiteSpace: 'pre-wrap' }} />}
       <Text type="secondary" style={{ display: 'block', marginTop: 8, fontSize: 12 }}>Recibido {fechaHora(p.creado)}</Text>
     </div>
@@ -53,7 +96,7 @@ export default function Pedidos() {
   useEffect(() => {
     setDatos(null);
     let q = db.from('pedidos')
-      .select('id, folio, fecha_entrega, estado, notas, creado, clientes(nombre, direccion, horario_recepcion, instrucciones), pedido_lineas(sucursal_nombre, producto_nombre, presentacion, unidad, cantidad, precio_unitario, importe)')
+      .select('id, folio, fecha_entrega, estado, notas, creado, clientes(nombre, direccion, horario_recepcion, instrucciones), pedido_lineas(id, sucursal_nombre, producto_nombre, presentacion, unidad, cantidad, precio_unitario, importe)')
       .limit(300);
     if (periodo === 'proximos') q = q.gte('fecha_entrega', hoyMX()).order('fecha_entrega').order('folio');
     else if (periodo === 'dia') q = q.eq('fecha_entrega', dia).order('folio');
@@ -153,7 +196,7 @@ export default function Pedidos() {
                     <Text strong className="cifra" style={{ fontSize: 17 }}>{dinero(totalDe(p))}</Text>
                   </Flex>
                 </div>
-                {abierto && <div style={{ padding: '0 14px 10px' }}><Detalle p={p} /></div>}
+                {abierto && <div style={{ padding: '0 14px 10px' }}><Detalle p={p} alGuardar={() => setRecarga((x) => x + 1)} /></div>}
                 <Flex gap={8} style={{ padding: 10, borderTop: '1px solid rgba(128,128,128,.15)' }}>
                   <Select value={p.estado} style={{ flex: 1 }} data-pedido={p.id} onChange={(v) => cambiarEstado(p, v)} aria-label="Estado del pedido"
                     options={Object.entries(ESTADOS).map(([v, t]) => ({ value: v, label: <Tag color={COLOR_ESTADO[v]} style={{ margin: 0 }}>{t}</Tag> }))} />
@@ -180,7 +223,7 @@ export default function Pedidos() {
           rowKey="id" columns={columnas} dataSource={datos || []} loading={!datos} size="middle" scroll={{ x: 760 }}
           pagination={{ pageSize: 25, hideOnSinglePage: true, showSizeChanger: false }}
           rowClassName={(p) => `pedido estado-${p.estado}`}
-          expandable={{ expandedRowRender: (p) => <Detalle p={p} />, defaultExpandAllRows: (datos || []).length <= 12, expandRowByClick: true }}
+          expandable={{ expandedRowRender: (p) => <Detalle p={p} alGuardar={() => setRecarga((x) => x + 1)} />, defaultExpandAllRows: (datos || []).length <= 12, expandRowByClick: true }}
           locale={{ emptyText: 'No hay pedidos con estos filtros. Cuando tus clientes pidan desde su link, aparecerán aquí.' }}
         />
       </Card>

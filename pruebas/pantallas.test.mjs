@@ -80,7 +80,8 @@ await db.exec(`
     ('10000000-0000-0000-0000-000000000001', 'Frijol negro', 'Granos', 'Costal 25 kg', 'costal'),
     ('10000000-0000-0000-0000-000000000002', 'Aceite vegetal', 'Aceites', 'Caja 12 L', 'caja'),
     ('10000000-0000-0000-0000-000000000003', '<img src=x onerror="window.__xss=1">', 'Limpieza', 'Galón', 'pieza'),
-    ('10000000-0000-0000-0000-000000000004', 'Sal de mar', 'Especias', 'Bolsa 1 kg', 'pieza');
+    ('10000000-0000-0000-0000-000000000004', 'Sal de mar', 'Especias', 'Bolsa 1 kg', 'pieza'),
+    ('10000000-0000-0000-0000-000000000005', 'Arroz a granel', 'Granos', 'Por kilo', 'kilo');
   insert into clientes (id, nombre, token) values
     ('20000000-0000-0000-0000-000000000001', 'Café Centro', 'tokencentro'),
     ('20000000-0000-0000-0000-000000000002', 'Cocina Norte', 'tokennorte');
@@ -89,7 +90,7 @@ await db.exec(`
     ('20000000-0000-0000-0000-000000000002', 'Condesa', 1);
   insert into cliente_productos (cliente_id, producto_id, precio)
     select c.id, p.id, case p.nombre when 'Frijol negro' then 450.50 when 'Aceite vegetal' then 380
-                                     when 'Sal de mar' then 0 else 10 end
+                                     when 'Sal de mar' then 0 when 'Arroz a granel' then 30 else 10 end
     from clientes c cross join productos p;
 `);
 const fechaMin = (await db.query('select fecha_minima_entrega()::text as f')).rows[0].f;
@@ -198,7 +199,7 @@ await prueba('flujo completo: tira de días, precios, revisar, confirmar, histor
   await captura(page, 'cliente-exito');
 
   const { rows } = await db.query(`
-    select l.producto_nombre, l.cantidad, l.precio_unitario::float as precio, l.importe::float as importe, p.notas, p.fecha_entrega::text as f
+    select l.producto_nombre, l.cantidad::float as cantidad, l.precio_unitario::float as precio, l.importe::float as importe, p.notas, p.fecha_entrega::text as f
     from pedido_lineas l join pedidos p on p.id = l.pedido_id order by l.producto_nombre`);
   assert.deepEqual(rows.map((r) => [r.producto_nombre, r.cantidad, r.precio, r.importe]),
     [['Aceite vegetal', 12, 380, 4560], ['Frijol negro', 2, 450.5, 901]]);
@@ -264,11 +265,13 @@ await prueba('«Otra fecha» abre el calendario y agrega el día a la tira', asy
   await page.locator('#clienteNombre').waitFor();
   await page.click('#btnOtraFecha');
   await page.locator('.modal-calendario .ant-picker-calendar').waitFor();
+  await page.waitForTimeout(400);   // la hoja termina de subir
   // Un día fuera de la tira, dentro del mes visible o del siguiente
   let lejana = sumarDias(fechaMin, 15);
   if (lejana.slice(0, 7) !== fechaMin.slice(0, 7)) {
     await page.locator('.modal-calendario .ant-picker-calendar-month-select').click();
     await page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option-selected + .ant-select-item-option').click();
+    await page.locator(`.modal-calendario td[title="${lejana}"].ant-picker-cell-in-view`).waitFor();
   }
   await page.click(`.modal-calendario td[title="${lejana}"]`);
   await page.locator(`#tiraDias button[data-seleccionado="si"][data-fecha="${lejana}"]`).waitFor();
@@ -303,6 +306,40 @@ await prueba('cliente en iPhone: sin zoom, revisión en hoja inferior y código 
   await page.close();
 });
 
+await prueba('granel: cantidades con decimales en productos por kilo', async () => {
+  const { page, errores } = await abrirCliente('tokencentro');
+  await page.locator('#clienteNombre').waitFor();
+  const arroz = producto(page, 'Arroz a granel');
+  assert.match(await arroz.textContent(), /\$30\.00\s*\/\s*kg/);
+  const f = sumarDias(fechaMin, 6);
+  await page.click(`#tiraDias button[data-fecha="${f}"]`);
+  // ± sube de medio en medio kilo
+  await arroz.getByLabel('Más').click();
+  assert.equal(await arroz.getByLabel('Cantidad').inputValue(), '0.5');
+  // Se escribe el peso exacto
+  await arroz.getByLabel('Cantidad').fill('2.5');
+  await arroz.locator('.subtotal', { hasText: '× 2.5 kg = $75.00' }).waitFor();
+  assert.equal(await arroz.getByLabel('Cantidad').getAttribute('inputmode'), 'decimal');
+  // Un producto por caja no acepta decimales
+  const aceite = producto(page, 'Aceite vegetal');
+  await aceite.getByLabel('Cantidad').fill('1.5');
+  await aceite.getByLabel('Cantidad').blur();
+  assert.match(await aceite.getByLabel('Cantidad').inputValue(), /^[12]$/);
+  await aceite.getByLabel('Cantidad').fill('0');
+  await aceite.getByLabel('Cantidad').blur();
+  await arroz.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await captura(page, 'cliente-granel');
+  await page.click('#btnRevisar');
+  assert.match(await page.textContent('#revisionContenido'), /2\.5 kg × \$30\.00.*\$75\.00/s);
+  await page.click('#btnConfirmar');
+  await page.locator('#exitoTitulo').waitFor();
+  const { rows } = await db.query(`select l.cantidad::float as c, l.importe::float as imp from pedido_lineas l
+    join pedidos p on p.id = l.pedido_id where p.fecha_entrega = $1`, [f]);
+  assert.deepEqual(rows, [{ c: 2.5, imp: 75 }]);
+  assert.deepEqual(errores, []);
+  await page.close();
+});
+
 await prueba('un cliente con sucursales pide por sucursal', async () => {
   const { page, errores } = await abrirCliente('tokennorte');
   await page.locator('.sucursal-titulo', { hasText: 'Roma' }).waitFor();
@@ -316,7 +353,7 @@ await prueba('un cliente con sucursales pide por sucursal', async () => {
   await page.click('#btnConfirmar');
   await page.locator('#exitoTitulo').waitFor();
   const { rows } = await db.query(`
-    select l.sucursal_nombre, l.producto_nombre, l.cantidad from pedido_lineas l
+    select l.sucursal_nombre, l.producto_nombre, l.cantidad::float as cantidad from pedido_lineas l
     join pedidos p on p.id = l.pedido_id join clientes c on c.id = p.cliente_id where c.token = 'tokennorte'`);
   assert.deepEqual(rows, [{ sucursal_nombre: 'Condesa', producto_nombre: 'Frijol negro', cantidad: 1 }]);
   assert.deepEqual(errores, []);
@@ -554,6 +591,10 @@ await prueba('panel en iPhone: pestañas, tarjetas, «Más», asistente en hoja 
 
   // Por comprar en lista
   await page.click('[data-pestana="compras"]');
+  await page.locator('.bloque-cliente').first().waitFor();
+  assert.equal(await page.locator('.bloque-cliente').count(), 2);
+  await captura(page, 'iphone-compras');
+  await page.locator('#vistaCompras').getByText('Sumado').click();
   await page.locator('.compra-fila').first().waitFor();
   assert.equal(await page.locator('.compra-fila').count(), 2);
   assert.ok(await sinDesborde(page), 'Por comprar sin desplazamiento horizontal');
@@ -626,10 +667,39 @@ await prueba('pedidos: detalle, total, escape, remisión y cambio de estado', as
   await page.close();
 });
 
-await prueba('por comprar: suma las cantidades de todos los clientes', async () => {
+await prueba('pedidos: ajustar al peso real los productos a granel', async () => {
+  const { page, errores, cambios, FIX } = await abrirAdmin();
+  FIX.pedidos[0].pedido_lineas.forEach((l, i) => (l.id = `l${i + 1}`));
+  FIX.pedidos[0].pedido_lineas.push({ id: 'l3', sucursal_nombre: '', producto_nombre: 'Arroz a granel', presentacion: 'Por kilo', unidad: 'kilo', cantidad: 2.5, precio_unitario: 30, importe: 75 });
+  await iniciarSesion(page);
+  await irA(page, /Pedidos/);
+  await page.locator('.pedido-detalle', { hasText: '2.5 kg' }).waitFor();
+  await page.click('.ajustar-pesos');
+  const peso = page.locator('.peso-real input');
+  assert.equal(await peso.count(), 1);   // solo la línea a granel
+  await peso.fill('2.37');
+  await page.click('.guardar-pesos');
+  await mensaje(page, 'Pesos actualizados');
+  const cambio = cambios.find((c) => c.tabla === 'pedido_lineas');
+  assert.deepEqual(cambio.cuerpo, { cantidad: 2.37 });
+  assert.match(cambio.query, /id=eq\.l3/);
+  assert.deepEqual(errores, []);
+  await page.close();
+});
+
+await prueba('por comprar: separado por cliente y sumado por producto', async () => {
   const { page, errores } = await abrirAdmin();
   await iniciarSesion(page);
   await irA(page, 'Por comprar');
+  // Por cliente (predeterminado): un bloque por cliente y sucursal
+  await page.locator('.bloque-cliente').first().waitFor();
+  const bloques = await page.$$eval('.bloque-cliente', (bs) => bs.map((b) => b.textContent));
+  assert.equal(bloques.length, 2);
+  assert.match(bloques[0], /Café Centro.*Aceite vegetal.*1.*Frijol negro.*2/s);
+  assert.match(bloques[1], /Cocina Norte.*Roma.*Frijol negro.*3/s);
+  await captura(page, 'admin-compras-por-cliente');
+  // Sumado
+  await page.locator('#vistaCompras').getByText('Sumado').click();
   await page.locator('.ant-table-row').first().waitFor();
   const filas = await page.$$eval('.ant-table-row', (trs) => trs.map((tr) => [...tr.children].slice(0, 3).map((td) => td.textContent.trim())));
   assert.deepEqual(filas, [['Aceite vegetal', 'Caja 12 L (caja)', '1'], ['Frijol negro', 'Costal 25 kg (costal)', '5']]);

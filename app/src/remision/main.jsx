@@ -6,7 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { Button, ConfigProvider, Flex, Layout, Result, Spin, Table, Typography, theme } from 'antd';
 import { PrinterOutlined } from '@ant-design/icons';
 import {
-  ESTADOS, UNIDADES, ZONA_HORARIA, db, dinero, fechaLarga, folioRemision, mensajeError, numeroALetras,
+  ESTADOS, UNIDADES, ZONA_HORARIA, db, dinero, fechaLarga, folioRemision, mensajeError, numeroALetras, textoCantidad,
 } from '../comun.js';
 import { Logo, Tema } from '../Tema.jsx';
 import './remision.css';
@@ -72,7 +72,7 @@ function Hoja({ negocio, cliente, pedido }) {
   });
   const columnas = [
     { title: 'Cant.', dataIndex: 'cantidad', align: 'center', width: 56, onCell: (r) => (r.tipo === 'sucursal' ? { colSpan: 5 } : r.tipo === 'subtotal' ? { colSpan: 4, style: { textAlign: 'right', fontWeight: 600 } } : {}),
-      render: (v, r) => (r.tipo ? r.texto : <strong>{v}</strong>) },
+      render: (v, r) => (r.tipo ? r.texto : <strong>{textoCantidad(v)}</strong>) },
     { title: 'Unidad', dataIndex: 'unidad', onCell: (r) => (r.tipo ? { colSpan: 0 } : {}), render: (u) => UNIDADES[u] || u },
     { title: 'Producto', dataIndex: 'producto', onCell: (r) => (r.tipo ? { colSpan: 0 } : {}),
       render: (v, r) => <><strong>{v}</strong>{r.presentacion && <span className="gris"> · {r.presentacion}</span>}</> },

@@ -62,6 +62,8 @@ Prueban la base de datos (permisos, reglas de pedido) en un Postgres local; lueg
 | `docs/cuestionario-descubrimiento.md` | El mismo cuestionario en texto, para contestar escribiendo. Es la fuente de los PDF. |
 | `docs/respuestas-ronda-1.md` | Respuestas de la primera ronda transcritas, resumen del negocio y pendientes. |
 | `docs/cuestionario-ipad-seguimiento.pdf` | Ronda 2: aclaraciones, supuestos y preguntas críticas pendientes (55 preguntas). |
+| `docs/respuestas-ronda-2.md` | Respuestas de la ronda 2 transcritas, decisiones para el sistema y lo que sigue en blanco. |
+| `docs/contestados/` | Los PDF contestados a mano (ronda 1 y ronda 2). |
 
 ## Regenerar los PDF del cuestionario
 
