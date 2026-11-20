@@ -17,23 +17,71 @@ function mezclar(a, b, p) {
 
 const FUENTE = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
-/** true si el sistema está en modo oscuro (y se actualiza al cambiar). */
-export function useSistemaOscuro() {
-  const consulta = () => window.matchMedia?.('(prefers-color-scheme: dark)');
-  const [oscuro, setOscuro] = useState(() => !!consulta()?.matches);
+/** true mientras se cumpla la consulta de medios (y se actualiza al cambiar). */
+function useMedia(consultaCss) {
+  const consulta = () => window.matchMedia?.(consultaCss);
+  const [cumple, setCumple] = useState(() => !!consulta()?.matches);
   useEffect(() => {
     const mq = consulta();
     if (!mq) return undefined;
-    const cambio = (e) => setOscuro(e.matches);
+    const cambio = (e) => setCumple(e.matches);
     mq.addEventListener('change', cambio);
     return () => mq.removeEventListener('change', cambio);
-  }, []);
-  return oscuro;
+  }, [consultaCss]);
+  return cumple;
+}
+
+/** true si el sistema está en modo oscuro. */
+export const useSistemaOscuro = () => useMedia('(prefers-color-scheme: dark)');
+
+/** true en pantallas de celular (menos de 768 px): las vistas cambian tablas por listas. */
+export const useCelular = () => useMedia('(max-width: 767.98px)');
+
+/** Dibuja el ícono de la pantalla de inicio (180 px) con el logo o las iniciales sobre el color de marca. */
+export function useIconoMarca({ logo, nombre, color }) {
+  useEffect(() => {
+    if (!nombre && !logo) return undefined;
+    let cancelado = false;
+    const lienzo = document.createElement('canvas');
+    lienzo.width = lienzo.height = 180;
+    const g = lienzo.getContext('2d');
+    if (!g) return undefined;
+    const poner = () => {
+      if (cancelado) return;
+      let enlace = document.querySelector('link[rel="apple-touch-icon"]');
+      if (!enlace) { enlace = document.createElement('link'); enlace.rel = 'apple-touch-icon'; document.head.appendChild(enlace); }
+      enlace.href = lienzo.toDataURL('image/png');
+      enlace.dataset.marca = 'si';
+    };
+    if (esLogoValido(logo)) {
+      const img = new Image();
+      img.onload = () => {
+        g.fillStyle = '#ffffff';
+        g.fillRect(0, 0, 180, 180);
+        const escala = Math.min(132 / img.width, 132 / img.height);
+        const w = img.width * escala, h = img.height * escala;
+        g.drawImage(img, (180 - w) / 2, (180 - h) / 2, w, h);
+        poner();
+      };
+      img.src = logo;
+    } else {
+      g.fillStyle = /^#[0-9a-f]{6}$/i.test(color || '') ? color : COLOR_PREDETERMINADO;
+      g.fillRect(0, 0, 180, 180);
+      g.fillStyle = '#ffffff';
+      g.font = `700 72px ${FUENTE}`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(iniciales(nombre), 90, 96);
+      poner();
+    }
+    return () => { cancelado = true; };
+  }, [logo, nombre, color]);
 }
 
 /** Envuelve una página con el tema de antd. modo: 'claro' | 'oscuro' | 'sistema'. */
 export function Tema({ color, modo = 'sistema', children }) {
   const sistemaOscuro = useSistemaOscuro();
+  const tactil = useMedia('(pointer: coarse)');
   const oscuro = modo === 'oscuro' || (modo === 'sistema' && sistemaOscuro);
   const primario = /^#[0-9a-f]{6}$/i.test(color || '') ? color : COLOR_PREDETERMINADO;
 
@@ -55,6 +103,10 @@ export function Tema({ color, modo = 'sistema', children }) {
           colorPrimaryBgHover: mezclar(primario, oscuro ? '#141414' : '#ffffff', oscuro ? 0.3 : 0.16),
           controlItemBgActive: mezclar(primario, oscuro ? '#141414' : '#ffffff', oscuro ? 0.22 : 0.1),
           controlItemBgActiveHover: mezclar(primario, oscuro ? '#141414' : '#ffffff', oscuro ? 0.3 : 0.16),
+          colorInfoBg: mezclar(primario, oscuro ? '#141414' : '#ffffff', oscuro ? 0.22 : 0.08),
+          colorInfoBorder: mezclar(primario, oscuro ? '#141414' : '#ffffff', oscuro ? 0.45 : 0.3),
+          // En pantallas táctiles: controles más altos (dedo) y letra de 16 px en campos (Safari no hace zoom)
+          ...(tactil ? { controlHeight: 40, controlHeightLG: 46, controlHeightSM: 32 } : {}),
         },
         components: {
           Layout: { headerBg: oscuro ? '#141414' : '#ffffff', siderBg: oscuro ? '#141414' : '#ffffff', headerPadding: '0 24px' },

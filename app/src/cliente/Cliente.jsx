@@ -1,7 +1,7 @@
 // Pantalla del cliente: elige fecha de entrega, cantidades por producto (y sucursal), revisa y envía.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert, App, Badge, Button, Calendar, Card, Divider, Drawer, Empty, Flex, Input, InputNumber, Layout, Modal,
+  Alert, App, Badge, Button, Calendar, Card, Divider, Drawer, Empty, Flex, Input, InputNumber, Layout,
   Result, Space, Spin, Tag, Typography, theme,
 } from 'antd';
 import {
@@ -12,11 +12,21 @@ import dayjs from 'dayjs';
 import {
   COLOR_ESTADO, ESTADOS, db, dinero, fechaCorta, fechaLarga, mensajeError, plural, sumarDias, textoPresentacion,
 } from '../comun.js';
-import { Logo } from '../Tema.jsx';
+import { Logo, useIconoMarca } from '../Tema.jsx';
+import Hoja from '../Hoja.jsx';
 
 const { Text, Title } = Typography;
 const DIAS_EN_TIRA = 14;
-const token = new URLSearchParams(window.location.search).get('c');
+// Código del cliente: del link, o el guardado si la app instalada se abre sin él
+const token = (() => {
+  const delLink = new URLSearchParams(window.location.search).get('c');
+  try {
+    if (delLink) { localStorage.setItem('codigoCliente', delLink); return delLink; }
+    const guardado = localStorage.getItem('codigoCliente');
+    if (guardado) window.history.replaceState(null, '', `${window.location.pathname}?c=${encodeURIComponent(guardado)}`);
+    return guardado;
+  } catch { return delLink; }
+})();
 const tienePrecio = (p) => Number(p.precio) > 0;
 
 export default function Cliente({ alCargarMarca }) {
@@ -25,6 +35,7 @@ export default function Cliente({ alCargarMarca }) {
 
   const [estado, setEstado] = useState({ tipo: 'cargando' });
   const [datos, setDatos] = useState(null);
+  useIconoMarca({ logo: datos?.negocio?.logo, nombre: datos?.negocio?.nombre, color: datos?.negocio?.color });
   const [pedidos, setPedidos] = useState([]);
   const [cantidades, setCantidades] = useState({});        // { 'iSucursal:iProducto': n }
   const [fecha, setFecha] = useState(null);
@@ -129,7 +140,7 @@ export default function Cliente({ alCargarMarca }) {
     : porCategoria.map(([cat], ci) => [`cat-0-${ci}`, cat]);
 
   const cabecera = (
-    <Layout.Header style={{
+    <Layout.Header className="margen-superior" style={{
       position: 'sticky', top: 0, zIndex: 50, height: 'auto', lineHeight: 1.4, padding: 0,
       background: t.colorBgContainer, borderBottom: `1px solid ${t.colorBorderSecondary}`,
     }}>
@@ -139,7 +150,8 @@ export default function Cliente({ alCargarMarca }) {
             <Logo logo={negocio?.logo} nombre={negocio?.nombre || 'PROVEEDOR'} size={32} />
             <Text strong id="negocio" ellipsis>{negocio?.nombre || 'PROVEEDOR'}</Text>
           </Flex>
-          {datos && <Button id="btnHistorial" icon={<HistoryOutlined />} onClick={() => setHistorial(true)}>Mis pedidos</Button>}
+          {datos && <Button id="btnHistorial" icon={<HistoryOutlined />} onClick={() => setHistorial(true)} aria-label="Mis pedidos">
+            <span className="texto-historial">Mis pedidos</span></Button>}
         </Flex>
         {datos && (
           <div style={{ marginTop: 10 }}>
@@ -160,7 +172,7 @@ export default function Cliente({ alCargarMarca }) {
 
   if (estado.tipo !== 'listo') {
     return (
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout className="pantalla-completa">
         {cabecera}
         <Layout.Content style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           {estado.tipo === 'cargando'
@@ -221,7 +233,7 @@ export default function Cliente({ alCargarMarca }) {
       <Space.Compact size="large">
         <Button aria-label="Menos" icon={<MinusOutlined />} disabled={des || n === 0} onClick={() => fijar(clave, n - 1)} />
         <InputNumber
-          aria-label="Cantidad" inputMode="numeric" controls={false} min={0} max={999} precision={0} disabled={des}
+          aria-label="Cantidad" inputMode="numeric" pattern="[0-9]*" controls={false} min={0} max={999} precision={0} disabled={des}
           value={n} onChange={(v) => fijar(clave, v)} onFocus={(e) => e.target.select()}
           style={{ width: 58, textAlign: 'center', fontWeight: 700 }} className="cifra"
         />
@@ -281,7 +293,7 @@ export default function Cliente({ alCargarMarca }) {
   });
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout className="pantalla-completa">
       {cabecera}
       <Layout.Content style={{ maxWidth: 680, width: '100%', margin: '0 auto', padding: '0 16px 170px' }}>
         {tituloSeccion(1, 'Fecha de entrega', <Button id="btnOtraFecha" icon={<CalendarOutlined />} onClick={() => setCalendario(true)}>Otra fecha</Button>)}
@@ -325,7 +337,7 @@ export default function Cliente({ alCargarMarca }) {
       </div>
 
       {/* Otra fecha */}
-      <Modal open={calendario} title="Elige otra fecha" footer={null} onCancel={() => setCalendario(false)} rootClassName="modal-calendario" destroyOnClose>
+      <Hoja open={calendario} title="Elige otra fecha" footer={null} onCancel={() => setCalendario(false)} rootClassName="modal-calendario" destroyOnClose alto="auto">
         <Calendar
           fullscreen={false}
           defaultValue={dayjs(fecha || datos.fecha_minima)}
@@ -333,11 +345,11 @@ export default function Cliente({ alCargarMarca }) {
           disabledDate={(d) => d.format('YYYY-MM-DD') < datos.fecha_minima || d.format('YYYY-MM-DD') > sumarDias(datos.fecha_minima, 90)}
           onSelect={(d, info) => { if (!info || info.source === 'date') elegirFecha(d.format('YYYY-MM-DD')); }}
         />
-      </Modal>
+      </Hoja>
 
       {/* Revisar */}
-      <Modal
-        open={revisando} title="Revisa tu pedido" onCancel={() => setRevisando(false)} rootClassName="modal-revision"
+      <Hoja
+        alto="auto" open={revisando} title="Revisa tu pedido" onCancel={() => setRevisando(false)} rootClassName="modal-revision"
         footer={[
           <Button key="c" onClick={() => setRevisando(false)} id="btnCorregir">Corregir</Button>,
           <Button key="o" type="primary" loading={enviando} onClick={confirmar} id="btnConfirmar">Confirmar pedido</Button>,
@@ -362,10 +374,10 @@ export default function Cliente({ alCargarMarca }) {
             </Flex>
           </div>
         )}
-      </Modal>
+      </Hoja>
 
       {/* Éxito */}
-      <Modal open={!!exito} footer={null} onCancel={() => setExito(null)} rootClassName="modal-exito" centered>
+      <Hoja open={!!exito} footer={null} onCancel={() => setExito(null)} rootClassName="modal-exito" centered alto="auto">
         {exito && (
           <Result
             status="success" icon={<CheckCircleFilled />}
@@ -377,7 +389,7 @@ export default function Cliente({ alCargarMarca }) {
             ]}
           />
         )}
-      </Modal>
+      </Hoja>
 
       {/* Historial */}
       <Drawer open={historial} onClose={() => setHistorial(false)} placement="bottom" height="88%" title="Mis pedidos"

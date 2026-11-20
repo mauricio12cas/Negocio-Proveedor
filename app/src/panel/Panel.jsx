@@ -1,14 +1,14 @@
 // Panel de administración: acceso, estructura (menú lateral) y datos compartidos entre vistas.
 import { createContext, useContext, useEffect, useState } from 'react';
 import {
-  Alert, App, Avatar, Badge, Button, Card, Drawer, Flex, Form, Grid, Input, Layout, Menu, Segmented, Spin, Tooltip, Typography, theme,
+  Alert, App, Avatar, Badge, Button, Card, Drawer, Flex, Form, Grid, Input, Layout, List, Menu, Segmented, Spin, Tooltip, Typography, theme,
 } from 'antd';
 import {
-  AppstoreOutlined, DashboardOutlined, DesktopOutlined, LogoutOutlined, MenuOutlined, MoonOutlined,
-  ProfileOutlined, SettingOutlined, ShoppingCartOutlined, SunOutlined, TeamOutlined,
+  AppstoreOutlined, DashboardOutlined, DesktopOutlined, EllipsisOutlined, LogoutOutlined, MoonOutlined,
+  ProfileOutlined, RightOutlined, SettingOutlined, ShoppingCartOutlined, SunOutlined, TeamOutlined,
 } from '@ant-design/icons';
 import { db, hoyMX, iniciales, margen, mensajeError } from '../comun.js';
-import { Logo } from '../Tema.jsx';
+import { Logo, useCelular, useIconoMarca } from '../Tema.jsx';
 import Inicio from './Inicio.jsx';
 import Pedidos from './Pedidos.jsx';
 import Compras from './Compras.jsx';
@@ -23,11 +23,12 @@ export const usePanel = () => useContext(Contexto);
 
 /** Encabezado de cada vista: título, descripción y acciones. */
 export function Encabezado({ titulo, texto, children }) {
+  const celular = useCelular();
   return (
-    <Flex justify="space-between" align="flex-end" gap={12} wrap style={{ marginBottom: 20 }}>
-      <div>
-        <Title level={3} style={{ margin: 0 }}>{titulo}</Title>
-        {texto && <Text type="secondary">{texto}</Text>}
+    <Flex justify="space-between" align={celular ? 'center' : 'flex-end'} gap={celular ? 8 : 12} wrap style={{ marginBottom: celular ? 14 : 20 }}>
+      <div style={{ minWidth: 0 }}>
+        <Title level={celular ? 4 : 3} style={{ margin: 0 }}>{titulo}</Title>
+        {texto && !celular && <Text type="secondary">{texto}</Text>}
       </div>
       {children && <Flex gap={8} wrap align="center" className="sin-imprimir">{children}</Flex>}
     </Flex>
@@ -72,12 +73,13 @@ export default function Panel({ modo, cambiarModo, cambiarColor }) {
   const { token } = theme.useToken();
   const pantalla = Grid.useBreakpoint();
   const escritorio = !!pantalla.lg;
+  const celular = useCelular();
 
   const [sesion, setSesion] = useState(undefined);   // undefined: revisando; null: sin sesión
   const [acceso, setAcceso] = useState({});
   const [vista, setVista] = useState('inicio');
   const [filtroPedidos, setFiltroPedidos] = useState(null);
-  const [menuMovil, setMenuMovil] = useState(false);
+  const [mas, setMas] = useState(false);   // hoja «Más» de la barra de pestañas
   const [ajustes, setAjustes] = useState(null);
   const [productos, setProductos] = useState([]);
   const [clientes, setClientes] = useState([]);
@@ -138,10 +140,12 @@ export default function Panel({ modo, cambiarModo, cambiarColor }) {
   function irA(destino, filtro = null) {
     setFiltroPedidos(filtro);
     setVista(destino);
-    setMenuMovil(false);
+    setMas(false);
     if (ajustes) cambiarColor(ajustes.color_acento);   // descarta la vista previa de Ajustes sin guardar
     window.scrollTo({ top: 0 });
   }
+
+  useIconoMarca({ logo: ajustes?.logo, nombre: ajustes?.nombre_negocio, color: ajustes?.color_acento });
 
   if (sesion === undefined) return <Flex justify="center" align="center" style={{ minHeight: '100vh' }}><Spin size="large" /></Flex>;
   if (!sesion) return <Acceso alEntrar={iniciarSesion} error={acceso.error} nota={acceso.nota} sinConfig={!db} />;
@@ -149,7 +153,7 @@ export default function Panel({ modo, cambiarModo, cambiarColor }) {
   const margenMinimo = ajustes?.margen_minimo ?? null;
   const ctx = {
     ajustes, productos, clientes, recargarAjustes, recargarProductos, recargarClientes, contarPorConfirmar,
-    setPorConfirmar, irA, filtroPedidos, cambiarColor,
+    setPorConfirmar, irA, filtroPedidos, cambiarColor, celular, conPestanas: !escritorio,
     esMargenBajo: (m) => m !== null && margenMinimo !== null && m < Number(margenMinimo),
     margenDe: (precio, costo) => margen(precio, costo),
   };
@@ -199,7 +203,7 @@ export default function Panel({ modo, cambiarModo, cambiarColor }) {
   const Vista = VISTAS[vista];
   return (
     <Contexto.Provider value={ctx}>
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout className="pantalla-completa">
         {escritorio ? (
           <Layout.Sider width={240} className="sin-imprimir" style={{
             position: 'fixed', insetBlock: 0, left: 0, borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
@@ -211,26 +215,70 @@ export default function Panel({ modo, cambiarModo, cambiarColor }) {
             </Flex>
           </Layout.Sider>
         ) : (
-          <Layout.Header className="sin-imprimir" style={{
-            position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', gap: 4, padding: '0 8px 0 0',
-            borderBottom: `1px solid ${token.colorBorderSecondary}`, height: 56,
+          <Layout.Header className="sin-imprimir margen-superior" style={{
+            position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', padding: 0,
+            borderBottom: `1px solid ${token.colorBorderSecondary}`, height: 'auto', lineHeight: 1.4,
           }}>
-            <div style={{ flex: 1, minWidth: 0 }}>{marca}</div>
-            <Badge count={porConfirmar} size="small" offset={[-6, 6]}>
-              <Button type="text" size="large" icon={<MenuOutlined />} aria-label="Menú" id="btnMenu" onClick={() => setMenuMovil(true)} />
-            </Badge>
+            <Flex align="center" gap={10} style={{ padding: '10px 16px', minWidth: 0, flex: 1 }}>
+              <Logo logo={ajustes?.logo} nombre={nombreNegocio} size={30} />
+              <Text strong ellipsis id="panelNegocio" style={{ fontSize: 15 }}>{nombreNegocio}</Text>
+            </Flex>
           </Layout.Header>
         )}
         {!escritorio && (
-          <Drawer open={menuMovil} onClose={() => setMenuMovil(false)} placement="left" width={280} title={null} closable={false}
-            styles={{ body: { padding: 0, display: 'flex', flexDirection: 'column' } }}>
-            {marca}
-            <div style={{ flex: 1 }}>{menu}</div>
-            <Flex vertical gap={12} style={{ padding: 14, borderTop: `1px solid ${token.colorBorderSecondary}` }}>{selectorTema}{usuario}</Flex>
-          </Drawer>
+          <>
+            {/* Barra de pestañas inferior, como en las apps de iPhone */}
+            <nav id="menu" className="barra-pestanas sin-imprimir margen-inferior" aria-label="Secciones" style={{
+              position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30, display: 'flex',
+              background: token.colorBgContainer, borderTop: `1px solid ${token.colorBorderSecondary}`,
+              boxShadow: '0 -4px 16px rgba(0,0,0,.05)',
+            }}>
+              {[
+                { key: 'inicio', icon: <DashboardOutlined />, label: 'Inicio' },
+                { key: 'pedidos', icon: <ProfileOutlined />, label: 'Pedidos', insignia: porConfirmar },
+                { key: 'compras', icon: <ShoppingCartOutlined />, label: 'Comprar' },
+                { key: 'clientes', icon: <TeamOutlined />, label: 'Clientes' },
+                { key: 'mas', icon: <EllipsisOutlined />, label: 'Más' },
+              ].map((p) => {
+                const activa = p.key === 'mas' ? ['catalogo', 'ajustes'].includes(vista) : vista === p.key;
+                return (
+                  <button key={p.key} type="button" role="menuitem" aria-label={p.label} aria-current={activa ? 'page' : undefined}
+                    data-pestana={p.key} onClick={() => (p.key === 'mas' ? setMas(true) : irA(p.key))}
+                    style={{
+                      flex: 1, minHeight: 56, border: 0, background: 'transparent', cursor: 'pointer', padding: '7px 0 5px',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, fontFamily: 'inherit',
+                      color: activa ? token.colorPrimary : token.colorTextSecondary, fontWeight: activa ? 600 : 500, fontSize: 11,
+                    }}>
+                    <Badge count={p.insignia || 0} size="small" offset={[4, -2]} id={p.key === 'pedidos' ? 'insigniaPedidos' : undefined}>
+                      <span style={{ fontSize: 22, lineHeight: 1, color: activa ? token.colorPrimary : token.colorTextSecondary }}>{p.icon}</span>
+                    </Badge>
+                    {p.label}
+                  </button>
+                );
+              })}
+            </nav>
+            <Drawer open={mas} onClose={() => setMas(false)} placement="bottom" height="auto" title="Más" rootClassName="hoja-celular hoja-mas"
+              styles={{ body: { paddingTop: 4 } }}>
+              <List
+                dataSource={[
+                  { key: 'catalogo', icon: <AppstoreOutlined />, label: 'Catálogo', texto: 'Productos, precios base y costos' },
+                  { key: 'ajustes', icon: <SettingOutlined />, label: 'Ajustes', texto: 'Negocio, marca, remisión y reglas' },
+                ]}
+                renderItem={(x) => (
+                  <List.Item role="menuitem" aria-label={x.label} onClick={() => irA(x.key)} style={{ cursor: 'pointer', paddingInline: 4 }} extra={<RightOutlined style={{ color: token.colorTextTertiary }} />}>
+                    <List.Item.Meta avatar={<Avatar shape="square" icon={x.icon} style={{ background: token.colorPrimaryBg, color: token.colorPrimary }} />}
+                      title={x.label} description={x.texto} />
+                  </List.Item>
+                )} />
+              <Flex vertical gap={14} style={{ marginTop: 12 }}>{selectorTema}{usuario}</Flex>
+            </Drawer>
+          </>
         )}
         <Layout className="panel-principal" style={{ marginLeft: escritorio ? 240 : 0 }}>
-          <Layout.Content style={{ padding: escritorio ? '28px 32px 64px' : '18px 14px 48px', maxWidth: 1360, width: '100%' }}>
+          <Layout.Content style={{
+            padding: escritorio ? '28px 32px 64px' : celular ? '14px 12px calc(84px + env(safe-area-inset-bottom))' : '20px 20px calc(90px + env(safe-area-inset-bottom))',
+            maxWidth: 1360, width: '100%',
+          }}>
             <Vista key={vista} />
           </Layout.Content>
         </Layout>

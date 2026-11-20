@@ -72,7 +72,7 @@ function TopLista({ id, filas, detalle, vacio }) {
 }
 
 export default function Inicio() {
-  const { ajustes, clientes, irA, esMargenBajo, margenDe, setPorConfirmar } = usePanel();
+  const { ajustes, clientes, irA, esMargenBajo, margenDe, setPorConfirmar, celular } = usePanel();
   const { token } = theme.useToken();
   const [dias, setDias] = useState(30);
   const [base, setBase] = useState(null);
@@ -165,14 +165,20 @@ export default function Inicio() {
           </Col>
 
           <Col span={24}>
-            <Card title="Ventas por día de entrega" extra={estadisticas && (
+            <Card title="Ventas por día de entrega" extra={!celular && estadisticas && (
               <div style={{ textAlign: 'right' }} id="graficaTotal">
                 <Text strong className="cifra" style={{ fontSize: 18 }}>{dinero(t.total)}</Text>{' '}
                 <Text type="secondary">{plural(Number(t.pedidos), 'pedido', 'pedidos')}</Text>
               </div>
             )}>
-              <Text type="secondary" style={{ display: 'block', marginTop: -8, marginBottom: 12 }}>Últimos {dias} días · por fecha de entrega, sin cancelados</Text>
-              {errorEstad ? <Empty description={errorEstad} /> : estadisticas ? <Grafica dias={estadisticas.por_dia} /> : <Skeleton active paragraph={{ rows: 6 }} />}
+              {celular && estadisticas && (
+                <div id="graficaTotal" style={{ marginTop: -6 }}>
+                  <Text strong className="cifra" style={{ fontSize: 20 }}>{dinero(t.total)}</Text>{' '}
+                  <Text type="secondary">{plural(Number(t.pedidos), 'pedido', 'pedidos')}</Text>
+                </div>
+              )}
+              <Text type="secondary" style={{ display: 'block', marginTop: celular ? 0 : -8, marginBottom: 12, fontSize: celular ? 12 : 14 }}>Últimos {dias} días · por fecha de entrega, sin cancelados</Text>
+              {errorEstad ? <Empty description={errorEstad} /> : estadisticas ? <Grafica dias={estadisticas.por_dia} alto={celular ? 220 : 280} /> : <Skeleton active paragraph={{ rows: 6 }} />}
             </Card>
           </Col>
 

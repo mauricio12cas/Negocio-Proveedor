@@ -34,6 +34,11 @@ Reglas: un pedido por cliente por día; no se puede pedir para el mismo día; co
 
 Para trabajar en tu computadora: `cd app && npm install && npm run dev` y abre la dirección que te muestra.
 
+### Usarla como app en el iPhone
+
+- **Tu panel:** abre `admin.html` en Safari → botón Compartir → **«Agregar a pantalla de inicio»**. Abre a pantalla completa, con barra de pestañas abajo y el ícono de tu logo o tus iniciales.
+- **Tus clientes:** lo mismo desde su link; la app recuerda su código aunque se abra sin él.
+
 ### Seguridad
 
 - Los clientes no tienen acceso directo a ninguna tabla: solo pueden usar tres funciones con el código de su link. Si un link se comparte por error, genera uno nuevo desde el panel (botón *Generar link nuevo*).

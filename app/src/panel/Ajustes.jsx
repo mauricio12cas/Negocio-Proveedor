@@ -37,7 +37,7 @@ function reducirImagen(archivo) {
 export default function Ajustes() {
   const { message } = App.useApp();
   const { token } = theme.useToken();
-  const { ajustes, recargarAjustes, cambiarColor } = usePanel();
+  const { ajustes, recargarAjustes, cambiarColor, celular, conPestanas } = usePanel();
   const [form] = Form.useForm();
   const [color, setColor] = useState(ajustes.color_acento || COLOR_PREDETERMINADO);
   const [logo, setLogo] = useState(ajustes.logo || null);
@@ -150,8 +150,8 @@ export default function Ajustes() {
             </Card>
           </Col>
         </Row>
-        <Flex justify="flex-end" style={{ position: 'sticky', bottom: 0, padding: '16px 0', marginTop: 8, background: `linear-gradient(transparent, ${token.colorBgLayout} 40%)` }}>
-          <Button type="primary" htmlType="submit" size="large" icon={<CheckOutlined />} loading={guardando} id="btnGuardarAjustes">Guardar ajustes</Button>
+        <Flex justify="flex-end" style={{ position: 'sticky', bottom: conPestanas ? 'calc(62px + env(safe-area-inset-bottom))' : 0, padding: '16px 0', marginTop: 8, background: `linear-gradient(transparent, ${token.colorBgLayout} 40%)` }}>
+          <Button type="primary" htmlType="submit" size="large" block={celular} icon={<CheckOutlined />} loading={guardando} id="btnGuardarAjustes">Guardar ajustes</Button>
         </Flex>
       </Form>
     </>

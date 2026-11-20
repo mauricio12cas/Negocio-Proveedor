@@ -1,11 +1,12 @@
 // Catálogo general: productos con precio base, costo y margen; alta, edición e importación desde Excel.
 import { useState } from 'react';
 import {
-  App, AutoComplete, Button, Card, Col, Flex, Form, Input, InputNumber, Modal, Row, Select, Switch, Table, Tag, Typography,
+  App, AutoComplete, Button, Card, Col, Flex, Form, Input, InputNumber, List, Row, Select, Switch, Table, Tag, Typography,
 } from 'antd';
-import { EditOutlined, PlusOutlined, TableOutlined } from '@ant-design/icons';
+import { EditOutlined, PlusOutlined, RightOutlined, TableOutlined } from '@ant-design/icons';
 import { UNIDADES, db, dinero, mensajeError, numero, textoMargen, textoPresentacion } from '../comun.js';
 import { Encabezado, usePanel } from './Panel.jsx';
+import Hoja from '../Hoja.jsx';
 
 const { Text, Paragraph } = Typography;
 const ALIAS_UNIDAD = {
@@ -55,7 +56,7 @@ function ModalProducto({ producto, alCerrar }) {
   }
 
   return (
-    <Modal open title={producto?.id ? 'Editar producto' : 'Nuevo producto'} onCancel={alCerrar} onOk={() => form.submit()} okText="Guardar" cancelText="Cancelar" rootClassName="modal-producto" destroyOnClose>
+    <Hoja open title={producto?.id ? 'Editar producto' : 'Nuevo producto'} onCancel={alCerrar} onOk={() => form.submit()} okText="Guardar" cancelText="Cancelar" rootClassName="modal-producto" destroyOnClose>
       <Form form={form} layout="vertical" onFinish={guardar} requiredMark={false} initialValues={{
         nombre: producto?.nombre || '', categoria: producto?.categoria || '', presentacion: producto?.presentacion || '', unidad: producto?.unidad || 'pieza',
         precio_base: producto && Number(producto.precio_base) ? Number(producto.precio_base) : null, costo: producto?.costo ?? null, activo: producto ? producto.activo : true,
@@ -75,7 +76,7 @@ function ModalProducto({ producto, alCerrar }) {
         </Row>
         {m !== null && <Text id="prMargen">Margen: <Text strong type={esMargenBajo(m) ? 'danger' : undefined}>{textoMargen(m)}</Text></Text>}
       </Form>
-    </Modal>
+    </Hoja>
   );
 }
 
@@ -94,7 +95,7 @@ function ModalImportar({ alCerrar }) {
   }
 
   return (
-    <Modal open title="Pegar productos desde Excel" onCancel={alCerrar} onOk={importar} okText="Agregar productos" cancelText="Cancelar"
+    <Hoja open title="Pegar productos desde Excel" onCancel={alCerrar} onOk={importar} okText="Agregar productos" cancelText="Cancelar"
       okButtonProps={{ disabled: !filas.length, id: 'btnConfirmarImportar' }} rootClassName="modal-importar" width={640}>
       <Paragraph type="secondary">
         Copia en Excel o Google Sheets las columnas <strong>Nombre</strong>, <strong>Categoría</strong>, <strong>Presentación</strong>,
@@ -103,12 +104,12 @@ function ModalImportar({ alCerrar }) {
       </Paragraph>
       <Input.TextArea id="textoImportar" rows={10} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder={'Frijol negro\tGranos\tCostal 25 kg\tcostal\t520\t430'} />
       <Text type="secondary" id="vistaImportar" style={{ display: 'block', marginTop: 8 }}>{filas.length ? `${filas.length} productos listos para agregar.` : ''}</Text>
-    </Modal>
+    </Hoja>
   );
 }
 
 export default function Catalogo() {
-  const { productos, esMargenBajo, margenDe } = usePanel();
+  const { productos, esMargenBajo, margenDe, celular } = usePanel();
   const [busqueda, setBusqueda] = useState('');
   const [categoria, setCategoria] = useState('');
   const [editando, setEditando] = useState(undefined);   // undefined: cerrado; null: nuevo
@@ -144,9 +145,42 @@ export default function Catalogo() {
   return (
     <>
       <Encabezado titulo="Catálogo general" texto="Todos tus productos. El precio base se propone al asignarlos a un cliente.">
-        <Button icon={<TableOutlined />} id="btnImportar" onClick={() => setImportando(true)}>Pegar desde Excel</Button>
-        <Button type="primary" icon={<PlusOutlined />} id="btnNuevoProducto" onClick={() => setEditando(null)}>Nuevo producto</Button>
+        <Button icon={<TableOutlined />} id="btnImportar" onClick={() => setImportando(true)}>{celular ? 'Excel' : 'Pegar desde Excel'}</Button>
+        <Button type="primary" icon={<PlusOutlined />} id="btnNuevoProducto" onClick={() => setEditando(null)}>{celular ? 'Nuevo' : 'Nuevo producto'}</Button>
       </Encabezado>
+      {celular ? (
+        <>
+          <Flex gap={8} style={{ marginBottom: 12 }}>
+            <Input.Search id="buscarProducto" placeholder="Buscar…" allowClear value={busqueda} onChange={(e) => setBusqueda(e.target.value)} style={{ flex: 1 }} />
+            <Select id="filtroCategoria" value={categoria} onChange={setCategoria} style={{ width: 140 }} popupMatchSelectWidth={false}
+              options={[{ value: '', label: 'Todas' }, ...categorias.map((c) => ({ value: c, label: c }))]} />
+          </Flex>
+          <Card styles={{ body: { padding: '0 14px' } }}>
+            <List id="listaProductos" dataSource={lista}
+              locale={{ emptyText: productos.length ? 'Ningún producto coincide.' : 'Aún no hay productos. Agrega uno o pégalos desde Excel.' }}
+              renderItem={(p) => {
+                const m = margenDe(p.precio_base, p.costo);
+                return (
+                  <List.Item className={`producto-fila ${p.activo ? '' : 'inactivo'}`} data-editar-producto={p.id} onClick={() => setEditando(p)}
+                    style={{ cursor: 'pointer', opacity: p.activo ? 1 : 0.55 }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <Text strong>{p.nombre}</Text>
+                      <div><Text type="secondary" style={{ fontSize: 13 }}>{textoPresentacion(p)} · {p.categoria}</Text></div>
+                    </div>
+                    <Flex align="center" gap={10}>
+                      <div style={{ textAlign: 'right' }}>
+                        {Number(p.precio_base) ? <Text strong className="cifra">{dinero(p.precio_base)}</Text> : <Text type="danger">Sin precio</Text>}
+                        <div><Text type={esMargenBajo(m) ? 'danger' : 'secondary'} className={`cifra ${esMargenBajo(m) ? 'margen-bajo' : ''}`} style={{ fontSize: 12 }}>
+                          {m === null ? 'sin costo' : `margen ${textoMargen(m)}`}</Text></div>
+                      </div>
+                      <RightOutlined style={{ fontSize: 12, opacity: 0.4 }} />
+                    </Flex>
+                  </List.Item>
+                );
+              }} />
+          </Card>
+        </>
+      ) : (
       <Card styles={{ body: { padding: 0 } }}>
         <Flex gap={8} wrap style={{ padding: 16 }}>
           <Input.Search id="buscarProducto" placeholder="Buscar producto…" allowClear value={busqueda} onChange={(e) => setBusqueda(e.target.value)} style={{ maxWidth: 320 }} />
@@ -157,6 +191,7 @@ export default function Catalogo() {
           pagination={{ pageSize: 50, hideOnSinglePage: true }} rowClassName={(p) => (p.activo ? '' : 'inactivo')}
           locale={{ emptyText: productos.length ? 'Ningún producto coincide.' : 'Aún no hay productos. Agrega uno o pégalos desde Excel.' }} />
       </Card>
+      )}
       {editando !== undefined && <ModalProducto producto={editando} alCerrar={() => setEditando(undefined)} />}
       {importando && <ModalImportar alCerrar={() => setImportando(false)} />}
     </>

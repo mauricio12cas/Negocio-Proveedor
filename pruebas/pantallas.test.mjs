@@ -22,6 +22,9 @@ if (CAPTURAS) mkdirSync(CAPTURAS, { recursive: true });
 const captura = (page, nombre, opciones = {}) =>
   CAPTURAS ? page.screenshot({ path: new URL(`${nombre}.png`, CAPTURAS).pathname, ...opciones }) : null;
 
+const IPHONE = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: CAPTURAS ? 3 : 1 };
+const sinDesborde = (page) => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+
 const TIPOS = { html: 'text/html', js: 'application/javascript', css: 'text/css', svg: 'image/svg+xml' };
 const json = (route, cuerpo, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(cuerpo) });
@@ -274,6 +277,32 @@ await prueba('«Otra fecha» abre el calendario y agrega el día a la tira', asy
   await page.close();
 });
 
+await prueba('cliente en iPhone: sin zoom, revisión en hoja inferior y código guardado', async () => {
+  const { page, errores } = await abrirCliente('tokencentro', IPHONE);
+  await page.locator('#clienteNombre').waitFor();
+  assert.equal(await page.getAttribute('meta[name="apple-mobile-web-app-capable"]', 'content'), 'yes');
+  await page.waitForFunction(() => document.querySelector('link[rel="apple-touch-icon"]')?.href.startsWith('data:image/png'));
+  const cantidad = producto(page, 'Frijol negro').getByLabel('Cantidad');
+  assert.equal(await cantidad.evaluate((x) => getComputedStyle(x).fontSize), '16px');
+  assert.equal(await cantidad.getAttribute('pattern'), '[0-9]*');
+  await page.click(`#tiraDias button[data-fecha="${sumarDias(fechaMin, 4)}"]`);
+  await producto(page, 'Frijol negro').getByLabel('Más').click();
+  await page.click('#btnRevisar');
+  await page.locator('.modal-revision.hoja-celular #revisionContenido').waitFor();
+  await page.waitForTimeout(350);
+  await captura(page, 'iphone-cliente-revision');
+  await page.click('#btnCorregir');
+  assert.ok(await sinDesborde(page));
+
+  // La app instalada se abre sin el código en la URL: usa el guardado
+  assert.equal(await page.evaluate(() => localStorage.getItem('codigoCliente')), 'tokencentro');
+  await page.goto('http://app.test/index.html');
+  await page.locator('#clienteNombre', { hasText: 'Café Centro' }).waitFor();
+  assert.match(page.url(), /\?c=tokencentro$/);
+  assert.deepEqual(errores, []);
+  await page.close();
+});
+
 await prueba('un cliente con sucursales pide por sucursal', async () => {
   const { page, errores } = await abrirCliente('tokennorte');
   await page.locator('.sucursal-titulo', { hasText: 'Roma' }).waitFor();
@@ -354,8 +383,9 @@ const fixturas = () => ({
   ],
 });
 
-async function abrirAdmin({ esAdmin = true, viewport = { width: 1366, height: 900 }, colorScheme = 'light' } = {}) {
-  const page = await navegador.newPage({ viewport, deviceScaleFactor: CAPTURAS ? 2 : 1, colorScheme });
+
+async function abrirAdmin({ esAdmin = true, viewport = { width: 1366, height: 900 }, colorScheme = 'light', iphone = false } = {}) {
+  const page = await navegador.newPage(iphone ? { ...IPHONE, colorScheme } : { viewport, deviceScaleFactor: CAPTURAS ? 2 : 1, colorScheme });
   const errores = [];
   const cambios = [];
   const llamadasEstadisticas = [];
@@ -489,16 +519,82 @@ await prueba('inicio: indicadores, gráfica, tops, clientes sin pedir, alertas y
   await page.close();
 });
 
-await prueba('panel en celular: menú en cajón lateral y sin desbordes', async () => {
-  const { page, errores } = await abrirAdmin({ viewport: { width: 390, height: 844 } });
+await prueba('panel en iPhone: pestañas, tarjetas, «Más», asistente en hoja y sin zoom', async () => {
+  const { page, errores, cambios } = await abrirAdmin({ iphone: true });
+  // Instalable: manifiesto y metas de iPhone
+  assert.equal(await page.getAttribute('link[rel="manifest"]', 'href'), './manifiesto-panel.webmanifest');
+  assert.equal(await page.getAttribute('meta[name="apple-mobile-web-app-capable"]', 'content'), 'yes');
+  // Sin zoom: los campos usan 16 px en pantallas táctiles
+  assert.equal(await page.$eval('#correo', (x) => getComputedStyle(x).fontSize), '16px');
   await iniciarSesion(page);
   await page.locator('#mVentas .valor', { hasText: '$' }).waitFor();
-  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'sin desplazamiento horizontal');
+  await page.waitForFunction(() => document.querySelector('link[rel="apple-touch-icon"]')?.href.startsWith('data:image/png'));
+
+  // Barra de pestañas abajo, con la insignia de por confirmar
+  const barra = await page.locator('.barra-pestanas').boundingBox();
+  assert.ok(barra.y + barra.height >= 843, 'la barra queda abajo');
+  assert.equal(await page.locator('[data-pestana]').count(), 5);
+  assert.match(await page.textContent('[data-pestana="pedidos"]'), /1/);
+  assert.ok(await sinDesborde(page), 'Inicio sin desplazamiento horizontal');
   await page.waitForTimeout(500);
-  await captura(page, 'admin-inicio-celular');
-  await page.click('#btnMenu');
-  await irA(page, 'Catálogo');
-  await page.locator('.ant-table-row', { hasText: 'Aceite vegetal' }).waitFor();
+  await captura(page, 'iphone-inicio');
+
+  // Pedidos como tarjetas, con cambio de estado
+  await page.click('[data-pestana="pedidos"]');
+  const tarjeta = page.locator('.tarjeta-pedido').first();
+  await tarjeta.waitFor();
+  assert.equal(await page.locator('.ant-table').count(), 0);
+  assert.match(await tarjeta.textContent(), /#7.*Cocina Norte.*\$1,360\.00.*Av\. Siempre Viva 123/s);
+  assert.ok(await sinDesborde(page), 'Pedidos sin desplazamiento horizontal');
+  await captura(page, 'iphone-pedidos');
+  await tarjeta.locator('.ant-select').click();
+  await page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option', { hasText: 'En ruta' }).click();
+  await mensaje(page, 'En ruta');
+  assert.deepEqual(cambios.find((c) => c.tabla === 'pedidos').cuerpo, { estado: 'en_ruta' });
+
+  // Por comprar en lista
+  await page.click('[data-pestana="compras"]');
+  await page.locator('.compra-fila').first().waitFor();
+  assert.equal(await page.locator('.compra-fila').count(), 2);
+  assert.ok(await sinDesborde(page), 'Por comprar sin desplazamiento horizontal');
+
+  // Clientes en tarjetas; el asistente abre como hoja de pantalla completa
+  await page.click('[data-pestana="clientes"]');
+  await page.locator('.cliente').first().waitFor();
+  assert.equal(await page.locator('.cliente').count(), 2);
+  assert.ok(await sinDesborde(page), 'Clientes sin desplazamiento horizontal');
+  await captura(page, 'iphone-clientes');
+  await page.click('[data-precios="c1"]');
+  await page.locator('.modal-cliente.hoja-celular .paso[data-paso="2"]').waitFor();
+  const hoja = await page.locator('.modal-cliente .ant-drawer-content-wrapper').boundingBox();
+  assert.ok(hoja.height > 780, `hoja casi a pantalla completa (${hoja.height})`);
+  const precio = (id) => page.locator(`.modal-cliente [data-producto="${id}"] .precio-cliente input`);
+  assert.equal(await precio('p1').inputValue(), '450.00');
+  await page.locator('.modal-cliente [data-producto="p2"] input[type=checkbox]').check();
+  assert.equal(await precio('p2').inputValue(), '380.00');
+  assert.ok(await page.$eval('.modal-cliente .ant-drawer-body', (b) => b.scrollWidth <= b.clientWidth), 'la hoja no se desplaza de lado');
+  await page.waitForTimeout(350);
+  await captura(page, 'iphone-asistente-precios');
+  await page.click('#btnCancelarCliente');
+
+  // «Más» → Catálogo y Ajustes
+  await page.click('[data-pestana="mas"]');
+  await page.locator('.hoja-mas').getByText('Catálogo').waitFor();
+  await page.waitForTimeout(350);
+  await captura(page, 'iphone-mas');
+  await page.locator('.hoja-mas').getByRole('menuitem', { name: 'Catálogo' }).click();
+  await page.locator('.producto-fila').first().waitFor();
+  assert.equal(await page.locator('.producto-fila').count(), 3);
+  assert.ok(await page.locator('.producto-fila', { hasText: 'Aceite vegetal' }).locator('.margen-bajo').count());
+  assert.ok(await sinDesborde(page), 'Catálogo sin desplazamiento horizontal');
+  await page.locator('.hoja-mas .ant-drawer-content-wrapper').waitFor({ state: 'hidden' });
+  await captura(page, 'iphone-catalogo');
+  await page.click('[data-pestana="mas"]');
+  await page.locator('.hoja-mas').getByRole('menuitem', { name: 'Ajustes' }).click();
+  await page.locator('#btnGuardarAjustes').waitFor();
+  const guardar = await page.locator('#btnGuardarAjustes').boundingBox();
+  assert.ok(guardar.y + guardar.height <= barra.y + 1, 'el botón Guardar queda arriba de la barra de pestañas');
+  assert.ok(await sinDesborde(page), 'Ajustes sin desplazamiento horizontal');
   assert.deepEqual(errores, []);
   await page.close();
 });

@@ -1,9 +1,36 @@
 /* Ajustes globales mínimos; el resto lo pone Ant Design. */
 html, body, #root { min-height: 100%; }
-body { margin: 0; -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+body {
+  margin: 0; -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01";
+  overscroll-behavior-y: none; -webkit-text-size-adjust: 100%;
+}
 .cifra { font-variant-numeric: tabular-nums; }
+.pantalla-completa { min-height: 100vh; min-height: 100dvh; }
+
+/* iPhone: notch arriba y barra de inicio abajo (con la app instalada a pantalla completa) */
+.margen-superior { padding-top: env(safe-area-inset-top); }
+.margen-inferior { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Táctil: sin zoom al tocar un campo (Safari lo hace con letra menor a 16 px) y sin doble toque */
+@media (pointer: coarse) {
+  input, textarea, select,
+  .ant-input, .ant-input-number-input, .ant-select-selection-search-input, .ant-select-selection-item,
+  .ant-select-selection-placeholder, .ant-picker-input > input { font-size: 16px !important; }
+  button, a, .ant-btn, .ant-select-selector, .ant-list-item, .ant-card, .ant-checkbox-wrapper, [role="button"] { touch-action: manipulation; }
+  * { -webkit-tap-highlight-color: transparent; }
+}
+
+/* Hoja inferior (Hoja.jsx en celular) */
+.hoja-celular .ant-drawer-content { border-radius: 16px 16px 0 0; }
+.hoja-celular .ant-drawer-header { padding: 14px 16px; }
+.hoja-celular .ant-drawer-body { padding: 16px; }
+.hoja-celular .ant-drawer-footer { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
+.hoja-celular .ant-drawer-footer .ant-flex > .ant-btn { flex: 1; height: 46px; font-size: 16px; }
+@media (max-width: 359px) { .texto-historial { display: none; } }
+.hoja-celular .agarradera { width: 40px; height: 5px; border-radius: 3px; background: rgba(128, 128, 128, .35); margin: 0 auto 8px; }
+
 @media print {
-  .sin-imprimir, .ant-layout-sider, .ant-layout-header, .ant-message { display: none !important; }
+  .sin-imprimir, .ant-layout-sider, .ant-layout-header, .ant-message, .barra-pestanas { display: none !important; }
   .solo-imprimir { display: block !important; }
   .panel-principal { margin-left: 0 !important; }
   .ant-layout, body { background: #fff !important; }

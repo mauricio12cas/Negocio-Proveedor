@@ -6,7 +6,7 @@ import { dinero, dineroCompacto, fechaCorta, fechaLarga } from '../comun.js';
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip);
 
-export default function Grafica({ dias }) {
+export default function Grafica({ dias, alto = 280 }) {
   const lienzo = useRef(null);
   const { token } = theme.useToken();
 
@@ -65,7 +65,7 @@ export default function Grafica({ dias }) {
 
   const total = dias.reduce((a, d) => a + (Number(d.total) || 0), 0);
   return (
-    <div style={{ position: 'relative', height: 280 }}>
+    <div style={{ position: 'relative', height: alto }}>
       <canvas ref={lienzo} id="graficaVentas" data-puntos={dias.length} role="img"
         aria-label={`Ventas por día, últimos ${dias.length} días. Total ${dinero(total)}.`} />
     </div>
