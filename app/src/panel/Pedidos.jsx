@@ -1,6 +1,7 @@
 // Pedidos: tabla con filtros, cambio de estado, detalle por pedido y remisiones.
 import { useEffect, useState } from 'react';
-import { Alert, App, Button, Card, DatePicker, Divider, Flex, Select, Table, Tag, Tooltip, Typography } from 'antd';
+import { Alert, App, Button, Card, Col, DatePicker, Divider, Empty, Flex, Row, Select, Skeleton, Table, Tag, Tooltip, Typography } from 'antd';
+import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import { EnvironmentOutlined, FileTextOutlined, PrinterOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
@@ -25,9 +26,9 @@ function Detalle({ p }) {
           {suc && <Divider orientation="left" plain style={{ margin: '8px 0', fontSize: 12 }}>{suc}</Divider>}
           {ls.map((l, i) => (
             <Flex key={i} justify="space-between" gap={12} className="linea" style={{ padding: '4px 0' }}>
-              <span><Tag bordered={false} style={{ fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{l.cantidad}</Tag>
+              <span style={{ minWidth: 0, flex: 1 }}><Tag bordered={false} style={{ fontWeight: 700, minWidth: 30, textAlign: 'center' }}>{l.cantidad}</Tag>
                 {l.producto_nombre} <Text type="secondary">{textoPresentacion(l)}{l.precio_unitario != null ? ` · ${dinero(l.precio_unitario)}` : ''}</Text></span>
-              <Text className="cifra">{l.importe != null ? dinero(l.importe) : ''}</Text>
+              <Text className="cifra" style={{ whiteSpace: 'nowrap' }}>{l.importe != null ? dinero(l.importe) : ''}</Text>
             </Flex>
           ))}
         </div>
@@ -40,7 +41,8 @@ function Detalle({ p }) {
 
 export default function Pedidos() {
   const { message, modal } = App.useApp();
-  const { clientes, filtroPedidos, contarPorConfirmar } = usePanel();
+  const { clientes, filtroPedidos, contarPorConfirmar, celular } = usePanel();
+  const [abiertos, setAbiertos] = useState({});   // celular: pedidos desplegados
   const [periodo, setPeriodo] = useState('proximos');
   const [dia, setDia] = useState(sumarDias(hoyMX(), 1));
   const [cliente, setCliente] = useState('');
@@ -106,11 +108,62 @@ export default function Pedidos() {
       <Encabezado titulo="Pedidos" texto="Confirma los pedidos, actualiza su estado e imprime remisiones.">
         <Tooltip title={`Imprime las remisiones del ${fechaLarga(diaRemisiones).toLowerCase()}`}>
           <Button icon={<PrinterOutlined />} id="btnRemisionesDia" onClick={() => abrirRemisiones(diaRemisiones)}>
-            {diaRemisiones === sumarDias(hoyMX(), 1) ? 'Remisiones de mañana' : `Remisiones del ${fechaCorta(diaRemisiones)}`}
+            {celular ? 'Remisiones' : diaRemisiones === sumarDias(hoyMX(), 1) ? 'Remisiones de mañana' : `Remisiones del ${fechaCorta(diaRemisiones)}`}
           </Button>
         </Tooltip>
         <Tooltip title="Actualizar"><Button icon={<ReloadOutlined />} aria-label="Actualizar" onClick={() => setRecarga((x) => x + 1)} /></Tooltip>
       </Encabezado>
+      {celular ? (
+        <>
+          <Row gutter={[8, 8]} style={{ marginBottom: 12 }}>
+            <Col span={periodo === 'dia' ? 12 : 24}>
+              <Select id="filtroPeriodo" value={periodo} onChange={setPeriodo} style={{ width: '100%' }} options={[
+                { value: 'proximos', label: 'Próximas entregas' }, { value: 'dia', label: 'Un día…' }, { value: 'todos', label: 'Todos (últimos 300)' },
+              ]} />
+            </Col>
+            {periodo === 'dia' && (
+              <Col span={12}><DatePicker id="filtroDia" value={dayjs(dia)} allowClear={false} format="ddd D MMM" inputReadOnly style={{ width: '100%' }}
+                onChange={(d) => d && setDia(d.format('YYYY-MM-DD'))} /></Col>
+            )}
+            <Col span={12}>
+              <Select id="filtroCliente" value={cliente} onChange={setCliente} style={{ width: '100%' }} showSearch optionFilterProp="label"
+                options={[{ value: '', label: 'Todos los clientes' }, ...clientes.map((c) => ({ value: c.id, label: c.nombre }))]} />
+            </Col>
+            <Col span={12}>
+              <Select id="filtroEstado" value={estado} onChange={setEstado} style={{ width: '100%' }}
+                options={[{ value: '', label: 'Todos los estados' }, ...Object.entries(ESTADOS).map(([v, t]) => ({ value: v, label: t }))]} />
+            </Col>
+          </Row>
+          {!datos ? <Card><Skeleton active /></Card> : !datos.length ? (
+            <Card><Empty description="No hay pedidos con estos filtros. Cuando tus clientes pidan desde su link, aparecerán aquí." /></Card>
+          ) : datos.map((p) => {
+            const abierto = abiertos[p.id] ?? datos.length <= 6;
+            return (
+              <Card key={p.id} size="small" className={`pedido tarjeta-pedido estado-${p.estado}`} style={{ marginBottom: 10 }} styles={{ body: { padding: 0 } }}>
+                <div role="button" tabIndex={0} onClick={() => setAbiertos((a) => ({ ...a, [p.id]: !abierto }))} style={{ padding: '12px 14px', cursor: 'pointer' }}>
+                  <Flex justify="space-between" align="flex-start" gap={10}>
+                    <div style={{ minWidth: 0 }}>
+                      <Text type="secondary" className="cifra" style={{ fontSize: 12 }}>#{p.folio} · {fechaCorta(p.fecha_entrega)}</Text>
+                      <div><Text strong className="pedido-cliente" style={{ fontSize: 16 }}>{p.clientes?.nombre || '—'}</Text></div>
+                    </div>
+                    <Tag color={COLOR_ESTADO[p.estado]} style={{ margin: 0 }}>{ESTADOS[p.estado]}</Tag>
+                  </Flex>
+                  <Flex justify="space-between" align="center" style={{ marginTop: 6 }}>
+                    <Text type="secondary" style={{ fontSize: 13 }}>{p.pedido_lineas.length} {p.pedido_lineas.length === 1 ? 'producto' : 'productos'} {abierto ? <UpOutlined /> : <DownOutlined />}</Text>
+                    <Text strong className="cifra" style={{ fontSize: 17 }}>{dinero(totalDe(p))}</Text>
+                  </Flex>
+                </div>
+                {abierto && <div style={{ padding: '0 14px 10px' }}><Detalle p={p} /></div>}
+                <Flex gap={8} style={{ padding: 10, borderTop: '1px solid rgba(128,128,128,.15)' }}>
+                  <Select value={p.estado} style={{ flex: 1 }} data-pedido={p.id} onChange={(v) => cambiarEstado(p, v)} aria-label="Estado del pedido"
+                    options={Object.entries(ESTADOS).map(([v, t]) => ({ value: v, label: <Tag color={COLOR_ESTADO[v]} style={{ margin: 0 }}>{t}</Tag> }))} />
+                  <Button icon={<FileTextOutlined />} href={`remision.html?pedido=${encodeURIComponent(p.id)}`} target="_blank" rel="noopener" data-remision={p.id}>Remisión</Button>
+                </Flex>
+              </Card>
+            );
+          })}
+        </>
+      ) : (
       <Card styles={{ body: { padding: 0 } }}>
         <Flex gap={8} wrap style={{ padding: 16 }}>
           <Select id="filtroPeriodo" value={periodo} onChange={setPeriodo} style={{ width: 190 }} options={[
@@ -131,6 +184,7 @@ export default function Pedidos() {
           locale={{ emptyText: 'No hay pedidos con estos filtros. Cuando tus clientes pidan desde su link, aparecerán aquí.' }}
         />
       </Card>
+      )}
     </>
   );
 }

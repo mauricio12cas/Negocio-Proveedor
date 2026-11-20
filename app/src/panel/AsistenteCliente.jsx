@@ -1,18 +1,19 @@
 // Asistente de 4 pasos para crear o editar un cliente: datos, productos y precios, sucursales y link.
 import { useMemo, useState } from 'react';
 import {
-  Alert, App, Button, Col, Flex, Form, Input, InputNumber, Modal, Result, Row, Select, Space, Steps, Switch, Table, Typography,
+  Alert, App, Button, Checkbox, Col, Collapse, Flex, Form, Input, InputNumber, Result, Row, Select, Space, Steps, Switch, Table, Typography,
 } from 'antd';
 import { DeleteOutlined, PlusOutlined, ReloadOutlined, WhatsAppOutlined } from '@ant-design/icons';
 import { abrirWhatsApp, db, dinero, numero, textoMargen, textoPresentacion, urlCliente } from '../comun.js';
 import { usePanel } from './Panel.jsx';
+import Hoja from '../Hoja.jsx';
 
 const { Text, Paragraph } = Typography;
 const TIPOS = ['Restaurante', 'Cafetería', 'Dark kitchen', 'Food truck', 'Público en general', 'Otro'];
 
 export default function AsistenteCliente({ cliente, paso: pasoInicial = 1, alCerrar }) {
   const { message, modal } = App.useApp();
-  const { productos, clientes, recargarClientes, esMargenBajo, margenDe } = usePanel();
+  const { productos, clientes, recargarClientes, esMargenBajo, margenDe, celular } = usePanel();
 
   const [editando, setEditando] = useState(cliente);
   const [paso, setPaso] = useState(pasoInicial);
@@ -174,6 +175,19 @@ export default function AsistenteCliente({ cliente, paso: pasoInicial = 1, alCer
     </div>
   );
 
+  const campoPrecio = (p, ancho = 140) => (
+    <InputNumber
+      aria-label={`Precio de ${p.nombre}`} className="precio-cliente" min={0} step={0.5} precision={2} prefix="$" style={{ width: ancho }}
+      inputMode="decimal" disabled={!seleccion.has(p.id)} value={seleccion.has(p.id) && seleccion.get(p.id) !== '' ? Number(seleccion.get(p.id)) : null}
+      placeholder="0.00" onChange={(v) => { setSeleccion((s) => new Map(s).set(p.id, v === null ? '' : String(v))); setError(''); }}
+    />
+  );
+  const textoMargenDe = (p) => {
+    if (!seleccion.has(p.id)) return null;
+    const m = margenDe(numero(seleccion.get(p.id)), p.costo);
+    return <Text type={esMargenBajo(m) ? 'danger' : 'secondary'} className={`margen cifra ${esMargenBajo(m) ? 'margen-bajo' : ''}`}>{textoMargen(m)}</Text>;
+  };
+
   const columnasPrecios = [
     {
       title: 'Producto', key: 'p',
@@ -182,38 +196,66 @@ export default function AsistenteCliente({ cliente, paso: pasoInicial = 1, alCer
     { title: 'Precio base', dataIndex: 'precio_base', align: 'right', width: 120, render: (v) => <Text type="secondary" className="cifra">{Number(v) ? dinero(v) : '—'}</Text> },
     {
       title: 'Precio del cliente', key: 'precio', align: 'right', width: 160,
-      render: (_, p) => (
-        <InputNumber
-          aria-label={`Precio de ${p.nombre}`} className="precio-cliente" min={0} step={0.5} precision={2} prefix="$" style={{ width: 140 }}
-          disabled={!seleccion.has(p.id)} value={seleccion.has(p.id) && seleccion.get(p.id) !== '' ? Number(seleccion.get(p.id)) : null}
-          placeholder="0.00" onChange={(v) => { setSeleccion((s) => new Map(s).set(p.id, v === null ? '' : String(v))); setError(''); }}
-        />
-      ),
+      render: (_, p) => campoPrecio(p),
     },
     {
       title: 'Margen', key: 'm', align: 'right', width: 90,
-      render: (_, p) => {
-        if (!seleccion.has(p.id)) return null;
-        const m = margenDe(numero(seleccion.get(p.id)), p.costo);
-        return <Text type={esMargenBajo(m) ? 'danger' : undefined} className={`margen cifra ${esMargenBajo(m) ? 'margen-bajo' : ''}`}>{textoMargen(m)}</Text>;
-      },
+      render: (_, p) => textoMargenDe(p),
     },
   ];
 
+  const herramientas = (
+    <Flex gap={8} wrap>
+      <Space.Compact>
+        <InputNumber id="ppPorcentaje" value={porcentaje} onChange={setPorcentaje} step={0.5} placeholder="%" suffix="%" style={{ width: 90 }} aria-label="Porcentaje de ajuste" />
+        <Button id="ppAjustar" onClick={ajustar}>Ajustar precios</Button>
+      </Space.Compact>
+      <Select id="ppCopiar" value={null} placeholder="Copiar de otro cliente…" style={{ width: celular ? '100%' : 230 }} onChange={copiarDe}
+        options={clientes.filter((x) => x.id !== editando?.id && x.cliente_productos.length).map((x) => ({ value: x.id, label: `${x.nombre} (${x.cliente_productos.length})` }))} />
+    </Flex>
+  );
+
+  const listaPrecios = (
+    <div id="ppTabla">
+      {!visibles.length && <Text type="secondary">Ningún producto coincide.</Text>}
+      {visibles.map((p) => {
+        const marcado = seleccion.has(p.id);
+        return (
+          <Flex key={p.id} data-producto={p.id} className={marcado ? 'marcado' : 'sin-marcar'} align="center" gap={10}
+            style={{ padding: '10px 0', borderBottom: '1px solid rgba(128,128,128,.15)', opacity: marcado ? 1 : 0.75 }}>
+            <Checkbox checked={marcado} onChange={(e) => marcar([p.id], e.target.checked)} aria-label={`Asignar ${p.nombre}`} />
+            <div style={{ flex: 1, minWidth: 0 }} onClick={() => marcar([p.id], !marcado)}>
+              <Text strong style={{ display: 'block' }}>{p.nombre}</Text>
+              <Text type="secondary" style={{ fontSize: 12 }}>{textoPresentacion(p)} · base {Number(p.precio_base) ? dinero(p.precio_base) : '—'}</Text>
+              {marcado && <div style={{ fontSize: 12 }}>Margen {textoMargenDe(p)}</div>}
+            </div>
+            {campoPrecio(p, 118)}
+          </Flex>
+        );
+      })}
+    </div>
+  );
+
   const paso2 = (
     <div className="paso" data-paso="2">
-      <Flex gap={8} wrap style={{ marginBottom: 12 }}>
-        <Input.Search id="ppBuscar" placeholder="Buscar producto…" allowClear value={busqueda} onChange={(e) => setBusqueda(e.target.value)} style={{ width: 200 }} />
-        <Select id="ppCategoria" value={categoria} onChange={setCategoria} style={{ width: 180 }}
-          options={[{ value: '', label: 'Todas las categorías' }, ...categorias.map((c) => ({ value: c, label: c }))]} />
-        <Space.Compact>
-          <InputNumber id="ppPorcentaje" value={porcentaje} onChange={setPorcentaje} step={0.5} placeholder="%" suffix="%" style={{ width: 90 }} aria-label="Porcentaje de ajuste" />
-          <Button id="ppAjustar" onClick={ajustar}>Ajustar precios</Button>
-        </Space.Compact>
-        <Select id="ppCopiar" value={null} placeholder="Copiar de otro cliente…" style={{ width: 230 }} onChange={copiarDe}
-          options={clientes.filter((x) => x.id !== editando?.id && x.cliente_productos.length).map((x) => ({ value: x.id, label: `${x.nombre} (${x.cliente_productos.length})` }))} />
-      </Flex>
-      {productos.length ? (
+      {celular ? (
+        <>
+          <Flex gap={8} style={{ marginBottom: 8 }}>
+            <Input.Search id="ppBuscar" placeholder="Buscar producto…" allowClear value={busqueda} onChange={(e) => setBusqueda(e.target.value)} style={{ flex: 1 }} />
+            <Select id="ppCategoria" value={categoria} onChange={setCategoria} style={{ width: 130 }} popupMatchSelectWidth={false}
+              options={[{ value: '', label: 'Todas' }, ...categorias.map((c) => ({ value: c, label: c }))]} />
+          </Flex>
+          <Collapse size="small" ghost style={{ marginBottom: 8 }} items={[{ key: 'h', label: 'Herramientas: ajustar ±% y copiar de otro cliente', children: herramientas }]} />
+        </>
+      ) : (
+        <Flex gap={8} wrap style={{ marginBottom: 12 }}>
+          <Input.Search id="ppBuscar" placeholder="Buscar producto…" allowClear value={busqueda} onChange={(e) => setBusqueda(e.target.value)} style={{ width: 200 }} />
+          <Select id="ppCategoria" value={categoria} onChange={setCategoria} style={{ width: 180 }}
+            options={[{ value: '', label: 'Todas las categorías' }, ...categorias.map((c) => ({ value: c, label: c }))]} />
+          {herramientas}
+        </Flex>
+      )}
+      {productos.length ? celular ? listaPrecios : (
         <Table id="ppTabla" rowKey="id" size="small" pagination={false} scroll={{ y: '42vh', x: 560 }} dataSource={visibles} columns={columnasPrecios}
           rowClassName={(p) => (seleccion.has(p.id) ? 'marcado' : 'sin-marcar')}
           onRow={(p) => ({ 'data-producto': p.id })}
@@ -262,33 +304,33 @@ export default function AsistenteCliente({ cliente, paso: pasoInicial = 1, alCer
   );
 
   const pie = (
-    <Flex gap={8} wrap>
+    <Flex gap={8} wrap={!celular}>
       {paso > 1 && paso < 4 && <Button id="btnAtras" onClick={() => { setError(''); setPaso(paso - 1); }}>Atrás</Button>}
       <span style={{ flex: 1 }} />
       <Button id="btnCancelarCliente" onClick={alCerrar}>{paso === 4 ? 'Cerrar' : 'Cancelar'}</Button>
       {nuevo && paso < 3 && <Button type="primary" ghost id="btnSiguiente" onClick={() => ir(paso + 1)}>Siguiente</Button>}
       {paso < 4 && (!nuevo || paso === 3) && (
-        <Button type="primary" id="btnGuardarCliente" loading={guardando} onClick={guardar}>{nuevo ? 'Guardar y ver link' : 'Guardar'}</Button>
+        <Button type="primary" id="btnGuardarCliente" loading={guardando} onClick={guardar}>{nuevo ? (celular ? 'Guardar' : 'Guardar y ver link') : 'Guardar'}</Button>
       )}
     </Flex>
   );
 
   return (
-    <Modal open width={920} title={editando ? editando.nombre : 'Nuevo cliente'} onCancel={alCerrar} footer={pie} rootClassName="modal-cliente" maskClosable={false}
+    <Hoja open width={920} title={editando ? editando.nombre : 'Nuevo cliente'} onCancel={alCerrar} footer={pie} rootClassName="modal-cliente" maskClosable={false}
       styles={{ body: { minHeight: 320 } }}>
-      <Steps id="pasosCliente" current={paso - 1} size="small" style={{ margin: '8px 0 24px' }}
+      <Steps id="pasosCliente" current={paso - 1} size="small" responsive={false} style={{ margin: celular ? '0 0 16px' : '8px 0 24px' }}
         onChange={(i) => ir(i + 1)}
         items={[
           { title: 'Datos' },
           { title: 'Productos y precios', disabled: nuevo && paso < 2 },
           { title: 'Sucursales', disabled: nuevo && paso < 3 },
           { title: 'Link', disabled: nuevo },
-        ]} />
+        ].map((x, i) => (celular && i !== paso - 1 ? { ...x, title: '' } : x))} />
       {paso === 1 && paso1}
       {paso === 2 && paso2}
       {paso === 3 && paso3}
       {paso === 4 && paso4}
       {error && <Alert type="error" showIcon message={error} id="errorPaso" style={{ marginTop: 12 }} />}
-    </Modal>
+    </Hoja>
   );
 }
